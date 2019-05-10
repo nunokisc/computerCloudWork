@@ -1,0 +1,22 @@
+{
+  "name": "computercloudwork",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nunokisc/computerCloudWork.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nunokisc/computerCloudWork/issues"
+  },
+  "homepage": "https://github.com/nunokisc/computerCloudWork#readme",
+  "dependencies": {
+    "dockerode": "^2.5.8"
+  }
+}
