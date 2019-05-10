@@ -52,6 +52,12 @@ docker.createContainer({Image: 'mysql', Cmd: ['mysqld'], name: 'mysql-server', E
 
 });
 
+docker.listContainers(function (err, containers) {
+
+    containersIDs.push(containers.Config.Hostname);
+
+});
+
 function getContainerDataRunning(id)
 {
 	let container = docker.getContainer(id);
