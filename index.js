@@ -1,5 +1,15 @@
 var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
+var app = require('express')();
+var http = require('http').createServer(app);
+
+app.get('/', function(req, res){
+  res.send('<h1>Hello world</h1>');
+});
+
+http.listen(3000, function(){
+  console.log('listening on *:3000');
+});
 var containersIDs = [];
 
 //RUN SYSTEM CONTAINERS IF THEY'RE NOT RUNNING ---------------------------------------------------------------------------------------------------------------------------

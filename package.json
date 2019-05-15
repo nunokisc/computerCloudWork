@@ -17,6 +17,8 @@
   },
   "homepage": "https://github.com/nunokisc/computerCloudWork#readme",
   "dependencies": {
-    "dockerode": "^2.5.8"
+    "dockerode": "^2.5.8",
+    "express": "^4.16.4",
+    "socket.io": "^2.2.0"
   }
 }
