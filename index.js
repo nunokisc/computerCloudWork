@@ -14,10 +14,10 @@ docker.listContainers(function (err, containers) {
 	else
 	{
 		console.log("No containers running");
-		startContainer('nginx', 'nginx-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html','/home/nuno/computerCloudWork/http/conf.d:/etc/nginx/conf.d']);
-		startContainer('php-fpm', 'php-fpm-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html'])
-		startContainer('mysql-server', 'mysql-server', ['/home/nuno/computerCloudWork/db:/docker-entrypoint-initdb.d/']);
-		startContainer('nginx', 'nginx-lb1', ['/home/nuno/computerCloudWork/loadbalancer/conf.d:/etc/nginx/conf.d']);
+		startContainer('nginx', 'nginx-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html','/home/nuno/computerCloudWork/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
+		startContainer('php-fpm', 'php-fpm-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html'],"172.18.0.5")
+		startContainer('mysql-server', 'mysql-server', ['/home/nuno/computerCloudWork/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
+		startContainer('nginx', 'nginx-lb1', ['/home/nuno/computerCloudWork/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
 	}
 });
 
@@ -25,16 +25,16 @@ function getContainerDataRunning(id)
 {
 	let container = docker.getContainer(id);
 	container.inspect(function (err, data) {
-		console.log(data.Name + ' ' + data.NetworkSettings.IPAddress + ' Online');
+		console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 	});
 
 }
 
-function startContainer(containerType, containerName, containerBinds)
+function startContainer(containerType, containerName, containerBinds, containerIp)
 {
 	if(containerType == 'php-fpm')
 	{
-		docker.createContainer({Image: 'kisc/php-fpm-kisc', Cmd: [], name: containerName, HostConfig: {'Binds': containerBinds}}, function (err, container) {
+		docker.createContainer({Image: 'kisc/php-fpm-kisc', Cmd: [], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
 			container.start(function (err, data) {
 				console.log(data);
 			});
@@ -47,7 +47,7 @@ function startContainer(containerType, containerName, containerBinds)
 	}
 	else if(containerType == 'mysql-server')
 	{
-		docker.createContainer({Image: 'mariadb', Cmd: ['mysqld'], name: containerName, Env:['MYSQL_ROOT_PASSWORD=root','MYSQL_DATABASE=wordpress'], HostConfig: {'Binds': containerBinds}}, function (err, container) {
+		docker.createContainer({Image: 'mariadb', Cmd: ['mysqld'], name: containerName, Env:['MYSQL_ROOT_PASSWORD=root','MYSQL_DATABASE=wordpress'], HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
 
 			var options = {
 				Cmd: ['bash', '-c', 'echo "bind-address = 0.0.0.0" >> /etc/mysql/my.cnf'],
@@ -80,7 +80,7 @@ function startContainer(containerType, containerName, containerBinds)
 	}
 	else if(containerType == 'nginx')
 	{
-		docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, HostConfig: {'Binds': containerBinds}}, function (err, container) {
+		docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
 			container.start(function (err, data) {
 				console.log(data);
 			});
