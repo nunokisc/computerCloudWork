@@ -18,10 +18,12 @@ docker.listContainers(function (err, containers) {
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		startContainer('nginx', 'nginx-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html','/home/nuno/computerCloudWork/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
-		startContainer('php-fpm', 'php-fpm-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html'],"172.18.0.5")
-		startContainer('mysql-server', 'mysql-server', ['/home/nuno/computerCloudWork/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
-		startContainer('nginx', 'nginx-lb1', ['/home/nuno/computerCloudWork/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
+		startContainer('nginx', 'nginx-sv1', ['/home/kisc/computerCloudWork/html:/var/www/html','/home/kisc/computerCloudWork/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
+		startContainer('php-fpm', 'php-fpm-sv1', ['/home/kisc/computerCloudWork/html:/var/www/html'],"172.18.0.5")
+		startContainer('mysql-server', 'mysql-server', ['/home/kisc/computerCloudWork/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
+		startContainer('nginx', 'nginx-lb1', ['/home/kisc/computerCloudWork/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
+		startContainer('influxdb', 'influxdb-server', [],"172.18.0.6");
+		startContainer('telegraf', 'telegraf-servers', ['/home/kisc/computerCloudWork/telegraf:/etc/telegraf'],"172.18.0.7");
 	}
 });
 
@@ -92,6 +94,34 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	else if(containerType == 'nginx')
 	{
 		docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
+			container.start(function (err, data) {
+				console.log(data);
+			});
+			//inspect para retornar o nome e ip da maquina iniciada
+			container.inspect(function (err, data) {
+				setTimeout(function(){
+					getContainerDataRunning(data.Config.Hostname);
+				},3000);
+			});
+		});
+	}
+	else if(containerType == "influxdb")
+	{
+		docker.createContainer({Image: 'influxdb', Cmd: [], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
+			container.start(function (err, data) {
+				console.log(data);
+			});
+			//inspect para retornar o nome e ip da maquina iniciada
+			container.inspect(function (err, data) {
+				setTimeout(function(){
+					getContainerDataRunning(data.Config.Hostname);
+				},3000);
+			});
+		});
+	}
+	else if(containerType == "telegraf")
+	{
+		docker.createContainer({Image: 'telegraf', Cmd: [], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
 			container.start(function (err, data) {
 				console.log(data);
 			});
