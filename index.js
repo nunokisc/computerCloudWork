@@ -14,9 +14,9 @@ docker.listContainers(function (err, containers) {
 	else
 	{
 		console.log("No containers running");
+		startContainer('nginx', 'nginx-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html','/home/nuno/computerCloudWork/http/conf.d:/etc/nginx/conf.d']);
 		startContainer('php-fpm', 'php-fpm-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html'])
 		startContainer('mysql-server', 'mysql-server', ['/home/nuno/computerCloudWork/db:/docker-entrypoint-initdb.d/']);
-		startContainer('nginx', 'nginx-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html','/home/nuno/computerCloudWork/http/conf.d:/etc/nginx/conf.d']);
 		startContainer('nginx', 'nginx-lb1', ['/home/nuno/computerCloudWork/loadbalancer/conf.d:/etc/nginx/conf.d']);
 	}
 });
