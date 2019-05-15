@@ -8,6 +8,7 @@ Desenvolvido em node.JS com o dockerode.
     docker pull nginx
     docker pull kisc/php-fpm-kisc
     docker pull mariadb
+    add to hosts file "172.17.0.x(loadbalancer ip) www.nuno.cardoso"
     
    After: 
    
