@@ -5,8 +5,10 @@ var http = require('http').createServer(app);
 var usedIps = [];
 
 docker.listContainers(function (err, containers) {
+	//verificar se existem containers a correr
 	if(containers.length > 0)
 	{
+		//retornar o nome e ip da maquina iniciada
 		containers.forEach(function (containerInfo) {
 			//console.log(containerInfo.Names[0]);
 			getContainerDataRunning(containerInfo.Id);
@@ -14,6 +16,7 @@ docker.listContainers(function (err, containers) {
 	}
 	else
 	{
+		// iniciar maquinas root
 		console.log("No containers running");
 		startContainer('nginx', 'nginx-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html','/home/nuno/computerCloudWork/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
 		startContainer('php-fpm', 'php-fpm-sv1', ['/home/nuno/computerCloudWork/html:/var/www/html'],"172.18.0.5")
@@ -24,6 +27,7 @@ docker.listContainers(function (err, containers) {
 
 function getContainerDataRunning(id)
 {
+	//inspeciona o container dado pelo id
 	let container = docker.getContainer(id);
 	container.inspect(function (err, data) {
 		usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
@@ -32,6 +36,7 @@ function getContainerDataRunning(id)
 
 }
 
+// Iniciar container do tipo x com o nome x com array de binds e com o ip x (verficar se não esta em uso)
 function startContainer(containerType, containerName, containerBinds, containerIp)
 {
 	if(containerType == 'php-fpm')
@@ -40,6 +45,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 			container.start(function (err, data) {
 				console.log(data);
 			});
+			//inspect para retornar o nome e ip da maquina iniciada
 			container.inspect(function (err, data) {
 				setTimeout(function(){
 					getContainerDataRunning(data.Config.Hostname);
@@ -49,8 +55,10 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	}
 	else if(containerType == 'mysql-server')
 	{
+		//MYSQL_ROOT_PASSWORD para password do root & MYSQL_DATABASE para base de dados que é criada com o binding no docker-entrypoint-initdb.d
 		docker.createContainer({Image: 'mariadb', Cmd: ['mysqld'], name: containerName, Env:['MYSQL_ROOT_PASSWORD=root','MYSQL_DATABASE=wordpress'], HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
 
+			//deixar ter acesso de fora do container
 			var options = {
 				Cmd: ['bash', '-c', 'echo "bind-address = 0.0.0.0" >> /etc/mysql/my.cnf'],
 				AttachStdout: true,
@@ -73,6 +81,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 			container.start(function (err, data) {
 				console.log(data);
 			});
+			//inspect para retornar o nome e ip da maquina iniciada
 			container.inspect(function (err, data) {
 				setTimeout(function(){
 					getContainerDataRunning(data.Config.Hostname);
@@ -86,6 +95,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 			container.start(function (err, data) {
 				console.log(data);
 			});
+			//inspect para retornar o nome e ip da maquina iniciada
 			container.inspect(function (err, data) {
 				setTimeout(function(){
 					getContainerDataRunning(data.Config.Hostname);
