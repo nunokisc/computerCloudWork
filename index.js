@@ -2,6 +2,7 @@ var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 var app = require('express')();
 var http = require('http').createServer(app);
+var usedIps = [];
 
 docker.listContainers(function (err, containers) {
 	if(containers.length > 0)
@@ -25,6 +26,7 @@ function getContainerDataRunning(id)
 {
 	let container = docker.getContainer(id);
 	container.inspect(function (err, data) {
+		usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
 		console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 	});
 
