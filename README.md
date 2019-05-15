@@ -8,11 +8,14 @@ Desenvolvido em node.JS com o dockerode.
     docker pull nginx
     docker pull kisc/php-fpm-kisc
     docker pull mariadb
+    docker pull influxdb
+    docker pull telegraf
     docker network create --driver=bridge --subnet=172.18.0.0/16 br0
     add to hosts file "172.18.0.2 www.computercloud.work"
     
    After: 
    
+	npm install
 	node index.js
 
 # State
@@ -21,8 +24,8 @@ Desenvolvido em node.JS com o dockerode.
  - [x] Iniciar container HTTP - Nginx
  - [x] Iniciar container Mysql - Nginx
  - [x] Iniciar container PHP - php-fpm
- - [ ] Iniciar container InfluxDB
- - [ ] Iniciar container Telegraf
+ - [x] Iniciar container InfluxDB
+ - [x] Iniciar container Telegraf
  - [ ] Adicionar containers LoadBalancer consoante a carga
  - [ ] Adicionar containers HTTP e PHP consoante a carga até um maximo de x por LoadBalancer
  - [ ] Configurar novos containers no LoadBalancer
