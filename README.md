@@ -8,7 +8,8 @@ Desenvolvido em node.JS com o dockerode.
     docker pull nginx
     docker pull kisc/php-fpm-kisc
     docker pull mariadb
-    add to hosts file "172.17.0.x(loadbalancer ip) www.computercloud.work"
+    docker network create --driver=bridge --subnet=172.18.0.0/16 br0
+    add to hosts file "172.18.0.2 www.computercloud.work"
     
    After: 
    
