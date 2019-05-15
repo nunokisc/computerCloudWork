@@ -103,4 +103,3 @@ http.listen(3000, function(){
 });
 // to put archive in container
 //container.putArchive('index.tar', {path:'/usr/share/nginx/html'});
-//container.remove();
