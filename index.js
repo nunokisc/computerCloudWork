@@ -1,5 +1,14 @@
 var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
+const Influx = require('influx')
+const influx = new Influx.InfluxDB({
+  host: '172.18.0.6',
+  database: 'telegraf'
+})
+
+setInterval(verifyConnectionsPerSecond,1000);
+
+
 var app = require('express')();
 var http = require('http').createServer(app);
 var usedIps = [];
@@ -27,6 +36,20 @@ docker.listContainers(function (err, containers) {
 		startContainer('telegraf', 'telegraf-servers', [absolutePath+'/telegraf:/etc/telegraf'],"172.18.0.7");
 	}
 });
+
+function verifyRequestsPerSecond()
+{
+	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 30s GROUP BY time(1s)').then(results => {
+	  console.log(results[0].requestsPerSecond);
+	})
+}
+
+function verifyConnectionsPerSecond()
+{
+	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
+	  console.log(results[0].activeConnections);
+	})
+}
 
 function getContainerDataRunning(id)
 {

@@ -19,6 +19,7 @@
   "dependencies": {
     "dockerode": "^2.5.8",
     "express": "^4.16.4",
+    "influx": "^5.0.0-alpha.4",
     "socket.io": "^2.2.0"
   }
 }
