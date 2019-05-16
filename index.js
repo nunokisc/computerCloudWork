@@ -5,14 +5,13 @@ const influx = new Influx.InfluxDB({
   host: '172.18.0.6',
   database: 'telegraf'
 })
-
-setInterval(verifyConnectionsPerSecond,1000);
-
-
 var app = require('express')();
 var http = require('http').createServer(app);
 var usedIps = [];
+var onlineContainers = [];
 var absolutePath = __dirname;
+var requestsPerSecond = 0;
+var activeConnections = 0;
 console.log(absolutePath);
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
@@ -37,17 +36,19 @@ docker.listContainers(function (err, containers) {
 	}
 });
 
-function verifyRequestsPerSecond()
+function getRequestsPerSecond()
 {
 	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 30s GROUP BY time(1s)').then(results => {
-	  console.log(results[0].requestsPerSecond);
+		requestsPerSecond = results[0].requestsPerSecond;
+	  	console.log(results[0].requestsPerSecond);
 	})
 }
 
-function verifyConnectionsPerSecond()
+function getActiveConnections()
 {
 	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
-	  console.log(results[0].activeConnections);
+		activeConnections = results[0].activeConnections;
+	  	console.log(results[0].activeConnections);
 	})
 }
 
@@ -56,9 +57,15 @@ function getContainerDataRunning(id)
 	//inspeciona o container dado pelo id
 	let container = docker.getContainer(id);
 	container.inspect(function (err, data) {
-		usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
+		usedIps.push({name:data.Name, ip:data.NetworkSettings.Networks.br0.IPAddress});
+		onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
 		console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 	});
+
+}
+
+function createNewNginxNode()
+{
 
 }
 
@@ -167,5 +174,8 @@ app.get('/', function(req, res){
 http.listen(3000, function(){
 	console.log('listening on *:3000');
 });
+
+setInterval(getActiveConnections,1000);
+setInterval(getRequestsPerSecond,1000);
 // to put archive in container
 //container.putArchive('index.tar', {path:'/usr/share/nginx/html'});

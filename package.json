@@ -20,6 +20,7 @@
     "dockerode": "^2.5.8",
     "express": "^4.16.4",
     "influx": "^5.0.0-alpha.4",
+    "nginx-conf": "^1.5.0",
     "socket.io": "^2.2.0"
   }
 }
