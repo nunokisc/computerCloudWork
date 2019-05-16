@@ -15,24 +15,39 @@ var activeConnections = 0;
 console.log(absolutePath);
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
+	let counter = 0;
 	if(containers.length > 0)
 	{
 		//retornar o nome e ip da maquina iniciada
 		containers.forEach(function (containerInfo) {
 			//console.log(containerInfo.Names[0]);
-			getContainerDataRunning(containerInfo.Id);
+
+			// verficiar se o container é cwc
+			if(containerInfo.Names[0].substring(1,4) == "cwc")
+			{
+				getContainerDataRunning(containerInfo.Id);
+				counter ++;
+			}
+
+			// verifica se o container é o influxdb
+			if(containerInfo.Names[0].substring(1,containerInfo.Names[0].length) == 'cwc-influxdb-sv')
+			{
+				setInterval(getActiveConnections,1000);
+				setInterval(getRequestsPerSecond,1000);
+			}
 		});
 	}
-	else
+	// caso não exista nenhum container que seja cwc
+	if(counter == 0)
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		startContainer('nginx', 'nginx-sv1', [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
-		startContainer('php-fpm', 'php-fpm-sv1', [absolutePath+'/html:/var/www/html'],"172.18.0.5")
-		startContainer('mysql-server', 'mysql-server', [absolutePath+'/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
-		startContainer('nginx', 'nginx-lb1', [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
-		startContainer('influxdb', 'influxdb-server', [],"172.18.0.6");
-		startContainer('telegraf', 'telegraf-servers', [absolutePath+'/telegraf:/etc/telegraf'],"172.18.0.7");
+		startContainer('nginx', 'cwc-nginx-sv1', [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
+		startContainer('php-fpm', 'cwc-php-fpm-sv1', [absolutePath+'/html:/var/www/html'],"172.18.0.5")
+		startContainer('mysql-server', 'cwc-mysql-sv', [absolutePath+'/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
+		startContainer('nginx', 'cwc-nginx-lb1', [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
+		startContainer('influxdb', 'cwc-influxdb-sv', [],"172.18.0.6");
+		startContainer('telegraf', 'cwc-telegraf-sv', [absolutePath+'/telegraf:/etc/telegraf'],"172.18.0.7");
 	}
 });
 
@@ -161,6 +176,10 @@ function startContainer(containerType, containerName, containerBinds, containerI
 				setTimeout(function(){
 					getContainerDataRunning(data.Config.Hostname);
 				},3000);
+				setTimeout(()=>{
+					setInterval(getActiveConnections,1000);
+					setInterval(getRequestsPerSecond,1000);
+				},30000);
 			});
 		});
 	}
@@ -175,7 +194,5 @@ http.listen(3000, function(){
 	console.log('listening on *:3000');
 });
 
-setInterval(getActiveConnections,1000);
-setInterval(getRequestsPerSecond,1000);
 // to put archive in container
 //container.putArchive('index.tar', {path:'/usr/share/nginx/html'});
