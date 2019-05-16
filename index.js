@@ -3,7 +3,8 @@ var docker = new Docker({socketPath: '/var/run/docker.sock'});
 var app = require('express')();
 var http = require('http').createServer(app);
 var usedIps = [];
-
+var absolutePath = __dirname;
+console.log(absolutePath);
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
 	if(containers.length > 0)
@@ -18,12 +19,12 @@ docker.listContainers(function (err, containers) {
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		startContainer('nginx', 'nginx-sv1', ['/home/kisc/computerCloudWork/html:/var/www/html','/home/kisc/computerCloudWork/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
-		startContainer('php-fpm', 'php-fpm-sv1', ['/home/kisc/computerCloudWork/html:/var/www/html'],"172.18.0.5")
-		startContainer('mysql-server', 'mysql-server', ['/home/kisc/computerCloudWork/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
-		startContainer('nginx', 'nginx-lb1', ['/home/kisc/computerCloudWork/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
+		startContainer('nginx', 'nginx-sv1', [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
+		startContainer('php-fpm', 'php-fpm-sv1', [absolutePath+'/html:/var/www/html'],"172.18.0.5")
+		startContainer('mysql-server', 'mysql-server', [absolutePath+'/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
+		startContainer('nginx', 'nginx-lb1', [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
 		startContainer('influxdb', 'influxdb-server', [],"172.18.0.6");
-		startContainer('telegraf', 'telegraf-servers', ['/home/kisc/computerCloudWork/telegraf:/etc/telegraf'],"172.18.0.7");
+		startContainer('telegraf', 'telegraf-servers', [absolutePath+'/telegraf:/etc/telegraf'],"172.18.0.7");
 	}
 });
 
