@@ -1,15 +1,25 @@
+var absolutePath = __dirname;
+var containerInitials = "cwc";
+var rootContainers = {
+	"nginx": {name:'cwc-nginx-sv1', ip:"172.18.0.3"},
+	"php": {name:'cwc-php-fpm-sv1', ip:"172.18.0.5"},
+	"mysql": {name:'cwc-mysql-sv', ip:"172.18.0.4"},
+	"nginxlb": {name:'cwc-nginx-lb1', ip:"172.18.0.2"},
+	"influxdb": {name:'cwc-influxdb-sv', ip:"172.18.0.6"},
+	"telegraf": {name:'cwc-telegraf-sv', ip:"172.18.0.7"}
+};
+
 var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 const Influx = require('influx')
 const influx = new Influx.InfluxDB({
-  host: '172.18.0.6',
+  host: rootContainers.influxdb.ip,
   database: 'telegraf'
 })
 var app = require('express')();
 var http = require('http').createServer(app);
 var usedIps = [];
 var onlineContainers = [];
-var absolutePath = __dirname;
 var requestsPerSecond = 0;
 var activeConnections = 0;
 console.log(absolutePath);
@@ -23,14 +33,14 @@ docker.listContainers(function (err, containers) {
 			//console.log(containerInfo.Names[0]);
 
 			// verficiar se o container é cwc
-			if(containerInfo.Names[0].substring(1,4) == "cwc")
+			if(containerInfo.Names[0].substring(1,4) == containerInitials)
 			{
 				getContainerDataRunning(containerInfo.Id);
 				counter ++;
 			}
 
 			// verifica se o container é o influxdb
-			if(containerInfo.Names[0].substring(1,containerInfo.Names[0].length) == 'cwc-influxdb-sv')
+			if(containerInfo.Names[0].substring(1,containerInfo.Names[0].length) == rootContainers.influxdb.name)
 			{
 				setInterval(getActiveConnections,1000);
 				setInterval(getRequestsPerSecond,1000);
@@ -42,12 +52,12 @@ docker.listContainers(function (err, containers) {
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		startContainer('nginx', 'cwc-nginx-sv1', [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d:/etc/nginx/conf.d'],"172.18.0.3");
-		startContainer('php-fpm', 'cwc-php-fpm-sv1', [absolutePath+'/html:/var/www/html'],"172.18.0.5")
-		startContainer('mysql-server', 'cwc-mysql-sv', [absolutePath+'/db:/docker-entrypoint-initdb.d/'],"172.18.0.4");
-		startContainer('nginx', 'cwc-nginx-lb1', [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],"172.18.0.2");
-		startContainer('influxdb', 'cwc-influxdb-sv', [],"172.18.0.6");
-		startContainer('telegraf', 'cwc-telegraf-sv', [absolutePath+'/telegraf:/etc/telegraf'],"172.18.0.7");
+		startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d:/etc/nginx/conf.d'],rootContainers.nginx.ip);
+		startContainer('php-fpm', rootContainers.php.name, [absolutePath+'/html:/var/www/html'],rootContainers.php.ip)
+		startContainer('mysql-server', rootContainers.mysql.name, [absolutePath+'/db:/docker-entrypoint-initdb.d/'],rootContainers.mysql.ip);
+		startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],rootContainers.nginxlb.ip);
+		startContainer('influxdb', rootContainers.influxdb.name, [],rootContainers.influxdb.ip);
+		startContainer('telegraf', rootContainers.telegraf.name, [absolutePath+'/telegraf:/etc/telegraf'],rootContainers.telegraf.ip);
 	}
 });
 
@@ -176,6 +186,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 				setTimeout(function(){
 					getContainerDataRunning(data.Config.Hostname);
 				},3000);
+				// espera 30secs ate arrancar o telegraf e o influx db para evitar timeout de querys
 				setTimeout(()=>{
 					setInterval(getActiveConnections,1000);
 					setInterval(getRequestsPerSecond,1000);
