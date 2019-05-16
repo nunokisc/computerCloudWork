@@ -1,12 +1,12 @@
 var absolutePath = __dirname;
 var containerInitials = "cwc";
 var rootContainers = {
-	"nginx": {name:'cwc-nginx-sv1', ip:"172.18.0.3"},
-	"php": {name:'cwc-php-fpm-sv1', ip:"172.18.0.5"},
-	"mysql": {name:'cwc-mysql-sv', ip:"172.18.0.4"},
-	"nginxlb": {name:'cwc-nginx-lb1', ip:"172.18.0.2"},
-	"influxdb": {name:'cwc-influxdb-sv', ip:"172.18.0.6"},
-	"telegraf": {name:'cwc-telegraf-sv', ip:"172.18.0.7"}
+	"nginx": {name:'cwc-nginx-master', ip:"172.18.0.3"},
+	"php": {name:'cwc-php-fpm-master', ip:"172.18.0.5"},
+	"mysql": {name:'cwc-mysql-master', ip:"172.18.0.4"},
+	"nginxlb": {name:'cwc-nginxlb-1', ip:"172.18.0.2"},
+	"influxdb": {name:'cwc-influxdb-master', ip:"172.18.0.6"},
+	"telegraf": {name:'cwc-telegraf-master', ip:"172.18.0.7"}
 };
 
 var Docker = require('dockerode');
@@ -18,8 +18,10 @@ const influx = new Influx.InfluxDB({
 })
 var app = require('express')();
 var http = require('http').createServer(app);
+var NginxConfFile = require('nginx-conf').NginxConfFile;
 var usedIps = [];
 var onlineContainers = [];
+var onlineNginxNodeContainers = [];
 var requestsPerSecond = 0;
 var activeConnections = 0;
 console.log(absolutePath);
@@ -52,7 +54,7 @@ docker.listContainers(function (err, containers) {
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d:/etc/nginx/conf.d'],rootContainers.nginx.ip);
+		startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/default.conf:/etc/nginx/conf.d/default.conf'],rootContainers.nginx.ip);
 		startContainer('php-fpm', rootContainers.php.name, [absolutePath+'/html:/var/www/html'],rootContainers.php.ip)
 		startContainer('mysql-server', rootContainers.mysql.name, [absolutePath+'/db:/docker-entrypoint-initdb.d/'],rootContainers.mysql.ip);
 		startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],rootContainers.nginxlb.ip);
@@ -91,7 +93,26 @@ function getContainerDataRunning(id)
 
 function createNewNginxNode()
 {
+	if(onlineNginxNodeContainers.length > 0)
+	{
 
+	}
+	else
+	{
+		NginxConfFile.create(__dirname+'/0-default.conf', function(err, conf) {
+			if (err) {
+				console.log(err);
+				return;
+			}
+
+			//reading values
+			console.log(conf.nginx.upstream.server.toString()); //www www
+			conf.nginx.upstream._add('server', '1.1.1.1');
+			console.log(conf.nginx.upstream.server.toString()); 
+			conf.live(__dirname+'/0-nodes.conf');
+			conf.die(__dirname+'/0-default.conf');
+		});
+	}
 }
 
 // Iniciar container do tipo x com o nome x com array de binds e com o ip x (verficar se não esta em uso)
