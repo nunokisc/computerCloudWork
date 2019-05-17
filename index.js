@@ -4,7 +4,7 @@ var rootContainers = {
 	"nginx": {name:'cwc-nginx-master', ip:"172.18.0.3"},
 	"php": {name:'cwc-php-fpm-master', ip:"172.18.0.5"},
 	"mysql": {name:'cwc-mysql-master', ip:"172.18.0.4"},
-	"nginxlb": {name:'cwc-nginxlb-1', ip:"172.18.0.2"},
+	"nginxlb": {name:'cwc-nginxlb-master', ip:"172.18.0.2"},
 	"influxdb": {name:'cwc-influxdb-master', ip:"172.18.0.6"},
 	"telegraf": {name:'cwc-telegraf-master', ip:"172.18.0.7"}
 };
@@ -33,16 +33,21 @@ docker.listContainers(function (err, containers) {
 		//retornar o nome e ip da maquina iniciada
 		containers.forEach(function (containerInfo) {
 			//console.log(containerInfo.Names[0]);
-
+			let containerName = containerInfo.Names[0].substring(1,containerInfo.Names[0].length);
 			// verficiar se o container é cwc
 			if(containerInfo.Names[0].substring(1,4) == containerInitials)
 			{
-				getContainerDataRunning(containerInfo.Id);
+				getContainerDataRunning(containerInfo.Id,true);
 				counter ++;
+				if(containerName.includes('cwc-nginx-') && !containerName.includes(rootContainers.nginx.name))
+				{
+					onlineNginxNodeContainers.push({name:containerName});
+					console.log(onlineNginxNodeContainers);
+				}
 			}
 
 			// verifica se o container é o influxdb
-			if(containerInfo.Names[0].substring(1,containerInfo.Names[0].length) == rootContainers.influxdb.name)
+			if(containerName == rootContainers.influxdb.name)
 			{
 				setInterval(getActiveConnections,1000);
 				setInterval(getRequestsPerSecond,1000);
@@ -79,45 +84,103 @@ function getActiveConnections()
 	})
 }
 
-function getContainerDataRunning(id)
+function getContainerDataRunning(id,initialStart)
 {
 	//inspeciona o container dado pelo id
-	let container = docker.getContainer(id);
-	container.inspect(function (err, data) {
-		usedIps.push({name:data.Name, ip:data.NetworkSettings.Networks.br0.IPAddress});
-		onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
-		console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
-	});
-
-}
-
-function createNewNginxNode()
-{
-	if(onlineNginxNodeContainers.length > 0)
+	if(initialStart)
 	{
-
+		let container = docker.getContainer(id);
+		container.inspect(function (err, data) {
+			onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
+			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
+		});
 	}
 	else
 	{
-		NginxConfFile.create(__dirname+'/0-default.conf', function(err, conf) {
-			if (err) {
-				console.log(err);
-				return;
-			}
-
-			//reading values
-			console.log(conf.nginx.upstream.server.toString()); //www www
-			conf.nginx.upstream._add('server', '1.1.1.1');
-			console.log(conf.nginx.upstream.server.toString()); 
-			conf.live(__dirname+'/0-nodes.conf');
-			conf.die(__dirname+'/0-default.conf');
+		let container = docker.getContainer(id);
+		container.inspect(function (err, data) {
+			usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
+			onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
+			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
 	}
+}
+
+async function createNewNginxNode()
+{
+	let randomPhpIp = "";
+	let randomNginxIp = "";
+	let nginxlbId = "";
+	for (let i = 0; i < onlineContainers.length; i++) {
+		if(onlineContainers[i].name.substring(1,onlineContainers[i].name.length) == rootContainers.nginxlb.name)
+		{
+			nginxlbId = onlineContainers[i].id;
+		}
+	}
+	while (true) 
+	{
+	  	randomPhpIp = "172.18.0."+(Math.floor(Math.random() * 255) + 1);
+	    if(!usedIps.includes(randomPhpIp))
+	    {
+	    	break;
+	    }
+	}
+	startContainer('php-fpm', 'cwc-php-fpm-'+onlineNginxNodeContainers.length, [absolutePath+'/html:/var/www/html'],randomPhpIp)
+	NginxConfFile.create(__dirname+'/http/conf.d/default.conf', function(err, conf) {
+		if (err) {
+			console.log(err);
+			return;
+		}
+
+		//reading values
+		conf.nginx.server.add_header._value = "X_NODE cwc-nginx-"+onlineNginxNodeContainers.length;
+		conf.nginx.server.location[1].fastcgi_pass._value = randomPhpIp+":9000";
+		conf.live(__dirname+'/http/conf.d/cwc-nginx-'+onlineNginxNodeContainers.length+'.conf');
+		conf.die(__dirname+'/http/conf.d/default.conf');
+	});
+	while (true) 
+	{
+	  	randomNginxIp = "172.18.0."+(Math.floor(Math.random() * 255) + 1);
+	    if(!usedIps.includes(randomNginxIp))
+	    {
+	    	break;
+	    }
+	}
+	startContainer('nginx', 'cwc-nginx-'+onlineNginxNodeContainers.length, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+onlineNginxNodeContainers.length+'.conf:/etc/nginx/conf.d/default.conf'],randomNginxIp);
+	NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		conf.nginx.upstream._add('server', randomNginxIp);
+	});
+	let container = docker.getContainer(nginxlbId);
+	var options = {
+		Cmd: ['bash', '-c', 'service nginx reload'],
+		AttachStdout: true,
+		AttachStderr: true
+	};
+
+	container.exec(options, function(err, exec) {
+		if (err) return;
+		exec.start(function(err, stream) {
+			if (err) return;
+
+			container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+			exec.inspect(function(err, data) {
+				if (err) return;
+				console.log(data);
+				onlineNginxNodeContainers.push({name: 'cwc-nginx-'+onlineNginxNodeContainers.length});
+			});
+		});
+	});
 }
 
 // Iniciar container do tipo x com o nome x com array de binds e com o ip x (verficar se não esta em uso)
 function startContainer(containerType, containerName, containerBinds, containerIp)
 {
+	usedIps.push(containerIp);
 	if(containerType == 'php-fpm')
 	{
 		docker.createContainer({Image: 'kisc/php-fpm-kisc', Cmd: [], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
@@ -127,7 +190,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 			//inspect para retornar o nome e ip da maquina iniciada
 			container.inspect(function (err, data) {
 				setTimeout(function(){
-					getContainerDataRunning(data.Config.Hostname);
+					getContainerDataRunning(data.Config.Hostname,false);
 				},3000);
 			});
 		});
@@ -163,7 +226,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 			//inspect para retornar o nome e ip da maquina iniciada
 			container.inspect(function (err, data) {
 				setTimeout(function(){
-					getContainerDataRunning(data.Config.Hostname);
+					getContainerDataRunning(data.Config.Hostname,false);
 				},3000);
 			});
 		});
@@ -177,7 +240,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 			//inspect para retornar o nome e ip da maquina iniciada
 			container.inspect(function (err, data) {
 				setTimeout(function(){
-					getContainerDataRunning(data.Config.Hostname);
+					getContainerDataRunning(data.Config.Hostname,false);
 				},3000);
 			});
 		});
@@ -191,7 +254,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 			//inspect para retornar o nome e ip da maquina iniciada
 			container.inspect(function (err, data) {
 				setTimeout(function(){
-					getContainerDataRunning(data.Config.Hostname);
+					getContainerDataRunning(data.Config.Hostname,false);
 				},3000);
 			});
 		});
@@ -225,6 +288,10 @@ app.get('/', function(req, res){
 http.listen(3000, function(){
 	console.log('listening on *:3000');
 });
+
+setTimeout(()=>{
+	createNewNginxNode();
+},30000);
 
 // to put archive in container
 //container.putArchive('index.tar', {path:'/usr/share/nginx/html'});
