@@ -24,6 +24,8 @@ var onlineContainers = [];
 var onlineNginxNodeContainers = [];
 var requestsPerSecond = 0;
 var activeConnections = 0;
+var requestsLimitToSpawn = 50;
+var connectionsLimitToSpawn = 25;
 console.log(absolutePath);
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
@@ -73,6 +75,11 @@ function getRequestsPerSecond()
 	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 30s GROUP BY time(1s)').then(results => {
 		requestsPerSecond = results[0].requestsPerSecond;
 	  	console.log(results[0].requestsPerSecond);
+	  	if(requestsPerSecond > requestsLimitToSpawn)
+	  	{
+	  		createNewNginxNode();
+	  		requestsLimitToSpawn = requestsLimitToSpawn * 2;
+	  	}
 	})
 }
 
@@ -81,6 +88,11 @@ function getActiveConnections()
 	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
 		activeConnections = results[0].activeConnections;
 	  	console.log(results[0].activeConnections);
+	  	if(activeConnections > connectionsLimitToSpawn)
+	  	{
+	  		createNewNginxNode();
+	  		connectionsLimitToSpawn = connectionsLimitToSpawn * 2;
+	  	}
 	})
 }
 
@@ -91,6 +103,7 @@ function getContainerDataRunning(id,initialStart)
 	{
 		let container = docker.getContainer(id);
 		container.inspect(function (err, data) {
+			usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
 			onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
 			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
@@ -99,7 +112,6 @@ function getContainerDataRunning(id,initialStart)
 	{
 		let container = docker.getContainer(id);
 		container.inspect(function (err, data) {
-			usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
 			onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
 			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
@@ -111,6 +123,8 @@ async function createNewNginxNode()
 	let randomPhpIp = "";
 	let randomNginxIp = "";
 	let nginxlbId = "";
+	let containerNumber = onlineNginxNodeContainers.length;
+	onlineNginxNodeContainers.push({name: 'cwc-nginx-'+containerNumber});
 	for (let i = 0; i < onlineContainers.length; i++) {
 		if(onlineContainers[i].name.substring(1,onlineContainers[i].name.length) == rootContainers.nginxlb.name)
 		{
@@ -119,13 +133,13 @@ async function createNewNginxNode()
 	}
 	while (true) 
 	{
-	  	randomPhpIp = "172.18.0."+(Math.floor(Math.random() * 255) + 1);
+	  	randomPhpIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
 	    if(!usedIps.includes(randomPhpIp))
 	    {
 	    	break;
 	    }
 	}
-	startContainer('php-fpm', 'cwc-php-fpm-'+onlineNginxNodeContainers.length, [absolutePath+'/html:/var/www/html'],randomPhpIp)
+	startContainer('php-fpm', 'cwc-php-fpm-'+containerNumber, [absolutePath+'/html:/var/www/html'],randomPhpIp)
 	NginxConfFile.create(__dirname+'/http/conf.d/default.conf', function(err, conf) {
 		if (err) {
 			console.log(err);
@@ -133,20 +147,20 @@ async function createNewNginxNode()
 		}
 
 		//reading values
-		conf.nginx.server.add_header._value = "X_NODE cwc-nginx-"+onlineNginxNodeContainers.length;
+		conf.nginx.server.add_header._value = "X_NODE cwc-nginx-"+containerNumber;
 		conf.nginx.server.location[1].fastcgi_pass._value = randomPhpIp+":9000";
-		conf.live(__dirname+'/http/conf.d/cwc-nginx-'+onlineNginxNodeContainers.length+'.conf');
+		conf.live(__dirname+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf');
 		conf.die(__dirname+'/http/conf.d/default.conf');
 	});
 	while (true) 
 	{
-	  	randomNginxIp = "172.18.0."+(Math.floor(Math.random() * 255) + 1);
+	  	randomNginxIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
 	    if(!usedIps.includes(randomNginxIp))
 	    {
 	    	break;
 	    }
 	}
-	startContainer('nginx', 'cwc-nginx-'+onlineNginxNodeContainers.length, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+onlineNginxNodeContainers.length+'.conf:/etc/nginx/conf.d/default.conf'],randomNginxIp);
+	startContainer('nginx', 'cwc-nginx-'+containerNumber, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf'],randomNginxIp);
 	NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
 		if (err) {
 			console.log(err);
@@ -171,7 +185,6 @@ async function createNewNginxNode()
 			exec.inspect(function(err, data) {
 				if (err) return;
 				console.log(data);
-				onlineNginxNodeContainers.push({name: 'cwc-nginx-'+onlineNginxNodeContainers.length});
 			});
 		});
 	});
@@ -233,17 +246,34 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	}
 	else if(containerType == 'nginx')
 	{
-		docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
-			container.start(function (err, data) {
-				console.log(data);
+		if(containerName == 'cwc-nginxlb-master')
+		{
+			docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, 'ExposedPorts': { '80/tcp': {} }, HostConfig: {'Binds': containerBinds, "PortBindings": { "80/tcp": [{ "HostPort": "80" }] }}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
+				container.start(function (err, data) {
+					console.log(data);
+				});
+				//inspect para retornar o nome e ip da maquina iniciada
+				container.inspect(function (err, data) {
+					setTimeout(function(){
+						getContainerDataRunning(data.Config.Hostname,false);
+					},3000);
+				});
 			});
-			//inspect para retornar o nome e ip da maquina iniciada
-			container.inspect(function (err, data) {
-				setTimeout(function(){
-					getContainerDataRunning(data.Config.Hostname,false);
-				},3000);
+		}
+		else
+		{
+			docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
+				container.start(function (err, data) {
+					console.log(data);
+				});
+				//inspect para retornar o nome e ip da maquina iniciada
+				container.inspect(function (err, data) {
+					setTimeout(function(){
+						getContainerDataRunning(data.Config.Hostname,false);
+					},3000);
+				});
 			});
-		});
+		}
 	}
 	else if(containerType == "influxdb")
 	{
@@ -289,9 +319,12 @@ http.listen(3000, function(){
 	console.log('listening on *:3000');
 });
 
-setTimeout(()=>{
+/*setTimeout(()=>{
 	createNewNginxNode();
-},30000);
+},30000);*/
+setTimeout(()=>{
+	console.log(usedIps);
+},3000);
 
 // to put archive in container
 //container.putArchive('index.tar', {path:'/usr/share/nginx/html'});
