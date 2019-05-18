@@ -21,6 +21,7 @@ var app = express();
 var http = require('http').createServer(app);
 var path = require('path');
 var NginxConfFile = require('nginx-conf').NginxConfFile;
+const fs = require('fs')
 var usedIps = [];
 var onlineContainers = [];
 var onlineNginxNodeContainers = [];
@@ -54,7 +55,7 @@ docker.listContainers(function (err, containers) {
 			// verifica se o container é o influxdb
 			if(containerName == rootContainers.influxdb.name)
 			{
-				setInterval(getActiveConnections,1000);
+				//setInterval(getActiveConnections,1000);
 				setInterval(getRequestsPerSecond,1000);
 			}
 		});
@@ -84,15 +85,25 @@ function getRequestsPerSecond()
 	  		createNewNginxNode();
 	  		console.log("req: limit "+requestsLimitToSpawn);
 	  	}
-	  	else if(activeConnections < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
+	  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
 	  	{
 	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
 	  		{
 	  			console.log("eliminar coiso");
 	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+	  			setTimeout(()=>{
+	  				deleteNewNginxNodeTimeOut();
+	  			},10000);
 	  		}	
 	  	}
 	})
+}
+
+function deleteNewNginxNodeTimeOut()
+{
+	setTimeout(()=>{
+		deleteNewNginxNode();
+	},10000);
 }
 
 function getActiveConnections()
@@ -143,13 +154,81 @@ async function deleteNewNginxNode()
 {
 	if(onlineNginxNodeContainers.length > 0)
 	{
-		console.log(onlineNginxNodeContainers[0].name.substring(onlineNginxNodeContainers[0].name.length-1,onlineNginxNodeContainers[0].name.length));
-		console.log(onlineNginxNodeContainers[0].name);
-		let onlineContainer =search(onlineNginxNodeContainers[0].name, onlineContainers);
-		console.log(onlineContainer.id);
-		let container = docker.getContainer(onlineContainer.id);
-		container.stop(function(){
+		let nginxlbId = "";
+		for (let i = 0; i < onlineContainers.length; i++) {
+			if(onlineContainers[i].name == rootContainers.nginxlb.name)
+			{
+				nginxlbId = onlineContainers[i].id;
+			}
+		}
 
+		let containerName = onlineNginxNodeContainers[0].name;
+		console.log(containerName);
+
+		let containersNumber = containerName.substring(containerName.length-1,containerName.length);
+		console.log(containersNumber);
+
+		onlineNginxNodeContainers.shift();
+
+		let onlineNginxContainer =search(containerName, onlineContainers);
+		let containerNginx = docker.getContainer(onlineNginxContainer.id);
+		onlineContainers = arrayRemove(onlineContainers, containerNginx);
+		usedIps = arrayRemove(usedIps, containerNginx.ip);
+		
+		console.log(onlineNginxContainer.id);
+
+		let onlineFpmContainer =search("cwc-php-fpm-"+containersNumber, onlineContainers);
+		let containerFpm = docker.getContainer(onlineFpmContainer.id);
+		onlineContainers = arrayRemove(onlineContainers, containerFpm);
+		usedIps = arrayRemove(usedIps, containerFpm.ip);
+
+		let container = docker.getContainer(nginxlbId);
+
+		containerNginx.stop(function(){
+			fs.unlink(absolutePath+"/http/conf.d/"+containerName+".conf", (err) => {
+				if (err) {
+					console.error(err)
+					return
+				}
+			})
+			containerFpm.stop(function(){
+				containerFpm.remove();
+			});
+			containerNginx.remove();
+			
+			NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				for (let i = 0; i < conf.nginx.upstream.server.length; i++) {
+					if(onlineNginxContainer.ip == conf.nginx.upstream.server[i]._value)
+					{
+						console.log("remove: "+conf.nginx.upstream.server[i]._value);
+						conf.nginx.upstream._remove('server',i);
+					}
+				}
+			});
+
+			var options = {
+				Cmd: ['bash', '-c', 'service nginx reload'],
+				AttachStdout: true,
+				AttachStderr: true
+			};
+
+			container.exec(options, function(err, exec) {
+				if (err) return;
+				exec.start(function(err, stream) {
+					if (err) return;
+
+					container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+					exec.inspect(function(err, data) {
+						if (err) return;
+						console.log(data);
+					});
+				});
+			});
 		});
 	}
 }
@@ -160,6 +239,14 @@ function search(nameKey, myArray){
             return myArray[i];
         }
     }
+}
+
+function arrayRemove(arr, value) {
+
+   return arr.filter(function(ele){
+       return ele != value;
+   });
+
 }
 
 async function createNewNginxNode()
@@ -184,7 +271,8 @@ async function createNewNginxNode()
 	    	break;
 	    }
 	}
-	startContainer('php-fpm', 'cwc-php-fpm-'+containerNumber, [absolutePath+'/html:/var/www/html'],randomPhpIp)
+	startContainer('php-fpm', 'cwc-php-fpm-'+containerNumber, [absolutePath+'/html:/var/www/html'],randomPhpIp);
+	console.log("startContainer: "+'php-fpm'+' '+'cwc-php-fpm-'+containerNumber+' '+[absolutePath+'/html:/var/www/html']+' '+randomPhpIp);
 	NginxConfFile.create(__dirname+'/http/conf.d/default.conf', function(err, conf) {
 		if (err) {
 			console.log(err);
@@ -207,6 +295,7 @@ async function createNewNginxNode()
 	    }
 	}
 	startContainer('nginx', 'cwc-nginx-'+containerNumber, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf'],randomNginxIp);
+	console.log("startContainer: "+'nginx'+' '+'cwc-nginx-'+containerNumber+' '+[absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf']+' '+randomNginxIp);
 	NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
 		if (err) {
 			console.log(err);
@@ -372,7 +461,7 @@ setTimeout(()=>{
 	console.log(onlineContainers);
 	console.log(onlineNginxNodeContainers);
 	console.log("requestsLimitToSpawn "+requestsLimitToSpawn);
-	//deleteNewNginxNode()
+	deleteNewNginxNode()
 },3000);
 
 // to put archive in container
