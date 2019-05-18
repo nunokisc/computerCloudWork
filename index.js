@@ -16,8 +16,10 @@ const influx = new Influx.InfluxDB({
   host: rootContainers.influxdb.ip,
   database: 'telegraf'
 })
-var app = require('express')();
+var express = require('express');
+var app = express();
 var http = require('http').createServer(app);
+var path = require('path');
 var NginxConfFile = require('nginx-conf').NginxConfFile;
 var usedIps = [];
 var onlineContainers = [];
@@ -355,9 +357,8 @@ function startContainer(containerType, containerName, containerBinds, containerI
 }
 
 
-app.get('/', function(req, res){
-	res.send('<h1>computerCloudWork</h1>');
-});
+var htmlPath = path.join(absolutePath, 'static');
+app.use(express.static(htmlPath));
 
 http.listen(3000, function(){
 	console.log('listening on *:3000');
