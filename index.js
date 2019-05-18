@@ -24,13 +24,10 @@ var onlineContainers = [];
 var onlineNginxNodeContainers = [];
 var requestsPerSecond = 0;
 var activeConnections = 0;
-var requestsLimitToSpawn = 50;
-var minRequestsLimitToSpawn = 50;
-var requestsLimitToSpawnPropagation = 2;
-var connectionsLimitToSpawn = 50;
-var minConnectionsLimitToSpawn = 50;
-var connectionsLimitToSpawnPropagation = 2;
-console.log(absolutePath);
+var requestsLimitToSpawn = 25;
+var requestsLimitToSpawnPropagation = 25;
+var connectionsLimitToSpawn = 25;
+var connectionsLimitToSpawnPropagation = 25;
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
 	let counter = 0;
@@ -48,7 +45,7 @@ docker.listContainers(function (err, containers) {
 				if(containerName.includes('cwc-nginx-') && !containerName.includes(rootContainers.nginx.name))
 				{
 					onlineNginxNodeContainers.push({name:containerName});
-					console.log(onlineNginxNodeContainers);
+					requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 				}
 			}
 
@@ -81,14 +78,17 @@ function getRequestsPerSecond()
 	  	console.log("rps: "+results[0].requestsPerSecond);
 	  	if(requestsPerSecond > requestsLimitToSpawn)
 	  	{
+	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 	  		createNewNginxNode();
-	  		requestsLimitToSpawn = requestsLimitToSpawn * requestsLimitToSpawnPropagation;
+	  		console.log("req: limit "+requestsLimitToSpawn);
 	  	}
-	  	else if(activeConnections < requestsLimitToSpawn / requestsLimitToSpawnPropagation)
+	  	else if(activeConnections < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
 	  	{
-	  		if(requestsLimitToSpawn > minRequestsLimitToSpawn)
+	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
+	  		{
 	  			console.log("eliminar coiso");
-	  			requestsLimitToSpawn = requestsLimitToSpawn / requestsLimitToSpawnPropagation;
+	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+	  		}	
 	  	}
 	})
 }
@@ -100,14 +100,17 @@ function getActiveConnections()
 	  	console.log("conn "+results[0].activeConnections);
 	  	if(activeConnections > connectionsLimitToSpawn)
 	  	{
+	  		connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
 	  		createNewNginxNode();
-	  		connectionsLimitToSpawn = connectionsLimitToSpawn * connectionsLimitToSpawnPropagation;
+	  		console.log("conn: limit "+connectionsLimitToSpawn);
 	  	}
-	  	else if(activeConnections < connectionsLimitToSpawn / connectionsLimitToSpawnPropagation)
+	  	else if(activeConnections < connectionsLimitToSpawn - connectionsLimitToSpawnPropagation)
 	  	{
-	  		if(connectionsLimitToSpawn > minConnectionsLimitToSpawn)
+	  		if(connectionsLimitToSpawn > connectionsLimitToSpawnPropagation)
+	  		{
 	  			console.log("eliminar coiso");
-	  			connectionsLimitToSpawn = connectionsLimitToSpawn / connectionsLimitToSpawnPropagation;
+	  			connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
+	  		}	
 	  	}
 	})
 }
@@ -120,7 +123,7 @@ function getContainerDataRunning(id,initialStart)
 		let container = docker.getContainer(id);
 		container.inspect(function (err, data) {
 			usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
-			onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
+			onlineContainers.push({name:data.Name.substring(1,data.Name.length) ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
 			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
 	}
@@ -128,10 +131,33 @@ function getContainerDataRunning(id,initialStart)
 	{
 		let container = docker.getContainer(id);
 		container.inspect(function (err, data) {
-			onlineContainers.push({name:data.Name ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
+			onlineContainers.push({name:data.Name.substring(1,data.Name.length) ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
 			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
 	}
+}
+
+async function deleteNewNginxNode()
+{
+	if(onlineNginxNodeContainers.length > 0)
+	{
+		console.log(onlineNginxNodeContainers[0].name.substring(onlineNginxNodeContainers[0].name.length-1,onlineNginxNodeContainers[0].name.length));
+		console.log(onlineNginxNodeContainers[0].name);
+		let onlineContainer =search(onlineNginxNodeContainers[0].name, onlineContainers);
+		console.log(onlineContainer.id);
+		let container = docker.getContainer(onlineContainer.id);
+		container.stop(function(){
+
+		});
+	}
+}
+
+function search(nameKey, myArray){
+    for (var i=0; i < myArray.length; i++) {
+        if (myArray[i].name === nameKey) {
+            return myArray[i];
+        }
+    }
 }
 
 async function createNewNginxNode()
@@ -142,7 +168,7 @@ async function createNewNginxNode()
 	let containerNumber = onlineNginxNodeContainers.length;
 	onlineNginxNodeContainers.push({name: 'cwc-nginx-'+containerNumber});
 	for (let i = 0; i < onlineContainers.length; i++) {
-		if(onlineContainers[i].name.substring(1,onlineContainers[i].name.length) == rootContainers.nginxlb.name)
+		if(onlineContainers[i].name == rootContainers.nginxlb.name)
 		{
 			nginxlbId = onlineContainers[i].id;
 		}
@@ -320,7 +346,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 				},3000);
 				// espera 30secs ate arrancar o telegraf e o influx db para evitar timeout de querys
 				setTimeout(()=>{
-					setInterval(getActiveConnections,1000);
+					//setInterval(getActiveConnections,1000);
 					setInterval(getRequestsPerSecond,1000);
 				},30000);
 			});
@@ -342,6 +368,10 @@ http.listen(3000, function(){
 },30000);*/
 setTimeout(()=>{
 	console.log(usedIps);
+	console.log(onlineContainers);
+	console.log(onlineNginxNodeContainers);
+	console.log("requestsLimitToSpawn "+requestsLimitToSpawn);
+	//deleteNewNginxNode()
 },3000);
 
 // to put archive in container
