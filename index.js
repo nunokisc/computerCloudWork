@@ -25,7 +25,11 @@ var onlineNginxNodeContainers = [];
 var requestsPerSecond = 0;
 var activeConnections = 0;
 var requestsLimitToSpawn = 50;
-var connectionsLimitToSpawn = 25;
+var minRequestsLimitToSpawn = 50;
+var requestsLimitToSpawnPropagation = 2;
+var connectionsLimitToSpawn = 50;
+var minConnectionsLimitToSpawn = 50;
+var connectionsLimitToSpawnPropagation = 2;
 console.log(absolutePath);
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
@@ -72,13 +76,19 @@ docker.listContainers(function (err, containers) {
 
 function getRequestsPerSecond()
 {
-	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 30s GROUP BY time(1s)').then(results => {
+	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
 		requestsPerSecond = results[0].requestsPerSecond;
-	  	console.log(results[0].requestsPerSecond);
+	  	console.log("rps: "+results[0].requestsPerSecond);
 	  	if(requestsPerSecond > requestsLimitToSpawn)
 	  	{
 	  		createNewNginxNode();
-	  		requestsLimitToSpawn = requestsLimitToSpawn * 2;
+	  		requestsLimitToSpawn = requestsLimitToSpawn * requestsLimitToSpawnPropagation;
+	  	}
+	  	else if(activeConnections < requestsLimitToSpawn / requestsLimitToSpawnPropagation)
+	  	{
+	  		if(requestsLimitToSpawn > minRequestsLimitToSpawn)
+	  			console.log("eliminar coiso");
+	  			requestsLimitToSpawn = requestsLimitToSpawn / requestsLimitToSpawnPropagation;
 	  	}
 	})
 }
@@ -87,11 +97,17 @@ function getActiveConnections()
 {
 	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
 		activeConnections = results[0].activeConnections;
-	  	console.log(results[0].activeConnections);
+	  	console.log("conn "+results[0].activeConnections);
 	  	if(activeConnections > connectionsLimitToSpawn)
 	  	{
 	  		createNewNginxNode();
-	  		connectionsLimitToSpawn = connectionsLimitToSpawn * 2;
+	  		connectionsLimitToSpawn = connectionsLimitToSpawn * connectionsLimitToSpawnPropagation;
+	  	}
+	  	else if(activeConnections < connectionsLimitToSpawn / connectionsLimitToSpawnPropagation)
+	  	{
+	  		if(connectionsLimitToSpawn > minConnectionsLimitToSpawn)
+	  			console.log("eliminar coiso");
+	  			connectionsLimitToSpawn = connectionsLimitToSpawn / connectionsLimitToSpawnPropagation;
 	  	}
 	})
 }
@@ -136,6 +152,7 @@ async function createNewNginxNode()
 	  	randomPhpIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
 	    if(!usedIps.includes(randomPhpIp))
 	    {
+	    	console.log(randomPhpIp);
 	    	break;
 	    }
 	}
@@ -157,6 +174,7 @@ async function createNewNginxNode()
 	  	randomNginxIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
 	    if(!usedIps.includes(randomNginxIp))
 	    {
+	    	console.log(randomNginxIp);
 	    	break;
 	    }
 	}
