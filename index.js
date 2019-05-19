@@ -468,13 +468,19 @@ http.listen(3000, function(){
 });
 
 io.on('connection', function(socket){
-  console.log('a user connected');
-  socket.on('getOnlineContainers',function(){
-  	socket.emit('getOnlineContainers',onlineContainers);
-  })
-  socket.on('disconnect', function(){
-    console.log('user disconnected');
-  });
+	console.log('a user connected');
+	socket.on('getOnlineContainers',function(){
+		socket.emit('getOnlineContainers',onlineContainers);
+	})
+	socket.on('getUsedIps',function(){
+		socket.emit('getUsedIps',usedIps);
+	})
+	socket.on('getOnlineNginxNodeContainers',function(){
+		socket.emit('getOnlineNginxNodeContainers',onlineNginxNodeContainers);
+	})
+	socket.on('disconnect', function(){
+		console.log('user disconnected');
+	});
 });
 
 /*setTimeout(()=>{
