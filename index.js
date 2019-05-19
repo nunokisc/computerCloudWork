@@ -7,7 +7,7 @@ var rootContainers = {
 	"nginxlb": {name:'cwc-nginxlb-master', ip:"172.18.0.2"},
 	"influxdb": {name:'cwc-influxdb-master', ip:"172.18.0.6"},
 	"telegraf": {name:'cwc-telegraf-master', ip:"172.18.0.7"},
-	"grafana": {name:'cwc-grafana-master', ip:"0.0.0.0"}
+	"grafana": {name:'cwc-grafana-master', ip:"172.18.0.8"}
 };
 
 var Docker = require('dockerode');
@@ -461,7 +461,8 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	}
 	else if(containerType == "grafana")
 	{
-		docker.createContainer({Image: 'tiagosantana/grafana', Cmd: ['grafana'], name: containerName, 'ExposedPorts': { '3001/tcp': {} }, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } } }, function (err, container) {
+		docker.createContainer({Image: 'tiagosantana/grafana', Cmd: [], name: containerName, 'ExposedPorts': { '3001/tcp': {} }, HostConfig: {PortBindings: {'3000/tcp': [{ HostPort: '3001' }]}}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } } }, function (err, container) {
+
 			container.start(function (err, data) {
 				console.log(data);
 			});
