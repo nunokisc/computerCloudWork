@@ -76,20 +76,25 @@ docker.listContainers(function (err, containers) {
 
 function getRequestsPerSecond()
 {
+	// query para receber os valores de rps
 	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
 		requestsPerSecond = results[0].requestsPerSecond;
 	  	console.log("rps: "+results[0].requestsPerSecond);
+	  	//caso os rps sejam maiores que o max do master node spawn um novo node
 	  	if(requestsPerSecond > requestsLimitToSpawn)
 	  	{
 	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 	  		createNewNginxNode();
 	  		console.log("req: limit "+requestsLimitToSpawn);
 	  	}
+	  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
 	  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
 	  	{
+	  		//apenas apagar ate ao limite minimo
 	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
 	  		{
 	  			console.log("eliminar coiso");
+	  			// diminuir os limite para o level abaixo
 	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
 	  			setTimeout(()=>{
 	  				deleteNewNginxNodeTimeOut();
@@ -101,6 +106,7 @@ function getRequestsPerSecond()
 
 function deleteNewNginxNodeTimeOut()
 {
+	//apagar node passados x ms
 	setTimeout(()=>{
 		deleteNewNginxNode();
 	},10000);
@@ -152,35 +158,39 @@ function getContainerDataRunning(id,initialStart)
 
 async function deleteNewNginxNode()
 {
+	//verifica se existem nodes extra activos
 	if(onlineNginxNodeContainers.length > 0)
 	{
 		let nginxlbId = "";
+		// ve qual o id do loadbalancer
 		for (let i = 0; i < onlineContainers.length; i++) {
 			if(onlineContainers[i].name == rootContainers.nginxlb.name)
 			{
 				nginxlbId = onlineContainers[i].id;
 			}
 		}
-
+		// vai buscar o nome do container que esta no topo do array
 		let containerName = onlineNginxNodeContainers[0].name;
 		console.log(containerName);
-
+		// faz um substring para obter o numero do container apartir do nome
 		let containersNumber = containerName.substring(containerName.length-1,containerName.length);
 		console.log(containersNumber);
-
+		//apaga o registo do topo do array
 		onlineNginxNodeContainers.shift();
-
-		let onlineNginxContainer =search(containerName, onlineContainers);
+		// pesquisa no array onlineContainers o container name e retorna o objecto
+		let onlineNginxContainer = search(containerName, onlineContainers);
+		// get container by id
 		let containerNginx = docker.getContainer(onlineNginxContainer.id);
-		onlineContainers = arrayRemove(onlineContainers, containerNginx);
-		usedIps = arrayRemove(usedIps, containerNginx.ip);
+		// remove 
+		onlineContainers = arrayRemove(onlineContainers, onlineNginxContainer);
+		usedIps = arrayRemove(usedIps, onlineNginxContainer.ip);
 		
 		console.log(onlineNginxContainer.id);
 
 		let onlineFpmContainer =search("cwc-php-fpm-"+containersNumber, onlineContainers);
 		let containerFpm = docker.getContainer(onlineFpmContainer.id);
-		onlineContainers = arrayRemove(onlineContainers, containerFpm);
-		usedIps = arrayRemove(usedIps, containerFpm.ip);
+		onlineContainers = arrayRemove(onlineContainers, onlineFpmContainer);
+		usedIps = arrayRemove(usedIps, onlineFpmContainer.ip);
 
 		let container = docker.getContainer(nginxlbId);
 
@@ -226,6 +236,9 @@ async function deleteNewNginxNode()
 					exec.inspect(function(err, data) {
 						if (err) return;
 						console.log(data);
+						console.log(usedIps);
+						console.log(onlineContainers);
+						console.log(onlineNginxNodeContainers);
 					});
 				});
 			});
