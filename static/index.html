@@ -1,1 +1,167 @@
-<h1>computerCloudWork</h1>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Simple Sidebar - Start Bootstrap Template</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- Custom styles for this template -->
+  <link href="css/simple-sidebar.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div class="bg-light border-right" id="sidebar-wrapper">
+      <div class="sidebar-heading">Start Bootstrap </div>
+      <div class="list-group list-group-flush">
+        <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light">Shortcuts</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light">Overview</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light">Events</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light">Profile</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light">Status</a>
+      </div>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+
+      <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <button class="btn btn-primary" id="menu-toggle">Toggle Menu</button>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+            <li class="nav-item active">
+              <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Link</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Dropdown
+              </a>
+              <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="#">Action</a>
+                <a class="dropdown-item" href="#">Another action</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#">Something else here</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    <div>
+      <div class="container-fluid">
+        <h1 class="mt-4">Metricas</h1>
+        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&from=1558149265431&to=1558235665432&var-datasource=InfluxDB&var-host=d8426ce20e0c&panelId=1" width="450" height="200" frameborder="0"></iframe>
+        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&from=1558149286439&to=1558235686440&var-datasource=InfluxDB&var-host=d8426ce20e0c&panelId=2" width="450" height="200" frameborder="0"></iframe>
+        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&from=1558149301917&to=1558235701918&var-datasource=InfluxDB&var-host=d8426ce20e0c&panelId=3" width="450" height="200" frameborder="0"></iframe>
+        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&from=1558149312036&to=1558235712036&var-datasource=InfluxDB&var-host=d8426ce20e0c&panelId=4" width="450" height="200" frameborder="0"></iframe>
+        <br>
+        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&from=1558149042443&to=1558235442443&var-datasource=InfluxDB&var-host=d8426ce20e0c&panelId=5" width="49%" height="300" frameborder="0"></iframe>
+        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&from=1558149001271&to=1558235401271&var-datasource=InfluxDB&var-host=d8426ce20e0c&panelId=7" width="49%" height="300" frameborder="0"></iframe>
+        <br>
+        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&from=1558148820662&to=1558235220662&var-datasource=InfluxDB&var-host=d8426ce20e0c&panelId=8" width="98.5%" height="300" frameborder="0"></iframe>
+
+
+      </div>
+
+      <div style="width: 50%; float: left;">
+        <h1 class="mt-4">Nodes</h1>
+       <table style="width:200; border:2px solid black; border-collapse:collapse;" id='thetable'>
+        <tr style="border:1px solid black">
+          <th style="border:1px solid black">Name</th>
+          <th>Ip</th>
+        </tr>
+      </table> 
+      </div>
+      <div style="width: 50%; float: right;">
+      <h1 class="mt-4">Ips</h1>
+       <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable2'>
+        <tr style="border:1px solid black">
+          <th>Ip</th>
+        </tr>
+      </table> 
+    </div>
+  </div>
+
+
+  </div>
+  <!-- /#page-content-wrapper -->
+
+</div>
+<!-- /#wrapper -->
+
+<!-- Bootstrap core JavaScript -->
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- Menu Toggle Script -->
+<script>
+  $("#menu-toggle").click(function(e) {
+    e.preventDefault();
+    $("#wrapper").toggleClass("toggled");
+  });
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+ var socket = io();
+
+ socket.emit('getOnlineContainers','');
+ socket.emit('getOnlineNginxNodeContainers','');
+ socket.emit('getUsedIps','');
+
+ socket.on('getOnlineContainers', function(msg) {
+   console.log(msg);
+
+   $('#thetable tr').not(':first').not(':last').remove();
+   var html = '';
+   for(var i = 0; i < msg.length; i++)
+    html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
+  '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
+  $('#thetable tr').first().after(html);
+
+})
+
+ socket.on('getUsedIps',function(msg){
+  console.log(msg);
+
+    $('#thetable2 tr').not(':first').not(':last').remove();
+   var html = '';
+   for(var i = 0; i < msg.length; i++)
+    html += '<tr style="border:1px solid black"><td>' + msg[i] + '</td></tr>';
+  $('#thetable2 tr').first().after(html);
+})
+ socket.on('getOnlineNginxNodeContainers',function(msg){
+  console.log(msg);
+
+})
+
+ $('#poke').click(function () {
+   socket.emit('getOnlineContainers','');
+ })
+</script>
+
+
+</body>
+
+</html>

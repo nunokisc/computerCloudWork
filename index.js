@@ -6,7 +6,8 @@ var rootContainers = {
 	"mysql": {name:'cwc-mysql-master', ip:"172.18.0.4"},
 	"nginxlb": {name:'cwc-nginxlb-master', ip:"172.18.0.2"},
 	"influxdb": {name:'cwc-influxdb-master', ip:"172.18.0.6"},
-	"telegraf": {name:'cwc-telegraf-master', ip:"172.18.0.7"}
+	"telegraf": {name:'cwc-telegraf-master', ip:"172.18.0.7"},
+	"grafana": {name:'cwc-grafana-master', ip:"0.0.0.0"}
 };
 
 var Docker = require('dockerode');
@@ -72,6 +73,7 @@ docker.listContainers(function (err, containers) {
 		startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],rootContainers.nginxlb.ip);
 		startContainer('influxdb', rootContainers.influxdb.name, [],rootContainers.influxdb.ip);
 		startContainer('telegraf', rootContainers.telegraf.name, [absolutePath+'/telegraf:/etc/telegraf'],rootContainers.telegraf.ip);
+		startContainer('grafana', rootContainers.grafana.name, [absolutePath+'/grafana:/etc/grafana'],rootContainers.grafana.ip);
 	}
 });
 
@@ -441,6 +443,25 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	else if(containerType == "telegraf")
 	{
 		docker.createContainer({Image: 'telegraf', Cmd: [], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
+			container.start(function (err, data) {
+				console.log(data);
+			});
+			//inspect para retornar o nome e ip da maquina iniciada
+			container.inspect(function (err, data) {
+				setTimeout(function(){
+					getContainerDataRunning(data.Config.Hostname);
+				},3000);
+				// espera 30secs ate arrancar o telegraf e o influx db para evitar timeout de querys
+				setTimeout(()=>{
+					//setInterval(getActiveConnections,1000);
+					setInterval(getRequestsPerSecond,1000);
+				},30000);
+			});
+		});
+	}
+	else if(containerType == "grafana")
+	{
+		docker.createContainer({Image: 'tiagosantana/grafana', Cmd: ['grafana'], name: containerName, 'ExposedPorts': { '3001/tcp': {} }, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } } }, function (err, container) {
 			container.start(function (err, data) {
 				console.log(data);
 			});
