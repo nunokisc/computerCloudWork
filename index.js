@@ -184,31 +184,36 @@ async function deleteNewNginxNode()
 		let onlineNginxContainer = search(containerName, onlineContainers);
 		// get container by id
 		let containerNginx = docker.getContainer(onlineNginxContainer.id);
-		// remove 
+		// remove container e ip dos arrays
 		onlineContainers = arrayRemove(onlineContainers, onlineNginxContainer);
 		usedIps = arrayRemove(usedIps, onlineNginxContainer.ip);
 		
 		console.log(onlineNginxContainer.id);
-
+		// pesquisa no array onlineContainers o container name e retorna o objecto
 		let onlineFpmContainer =search("cwc-php-fpm-"+containersNumber, onlineContainers);
+		// get container by id
 		let containerFpm = docker.getContainer(onlineFpmContainer.id);
+		// remove container e ip dos arrays
 		onlineContainers = arrayRemove(onlineContainers, onlineFpmContainer);
 		usedIps = arrayRemove(usedIps, onlineFpmContainer.ip);
-
+		//get lb container by id
 		let container = docker.getContainer(nginxlbId);
-
+		// stop nginx node container
 		containerNginx.stop(function(){
+			// remove nginx node config from conf.d
 			fs.unlink(absolutePath+"/http/conf.d/"+containerName+".conf", (err) => {
 				if (err) {
 					console.error(err)
 					return
 				}
 			})
+			// stop and remove fpm node container
 			containerFpm.stop(function(){
 				containerFpm.remove();
 			});
+			//remove nginx node container
 			containerNginx.remove();
-			
+			//remove nginx node ip from loadbalancer conf.d
 			NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
 				if (err) {
 					console.log(err);
@@ -228,7 +233,7 @@ async function deleteNewNginxNode()
 				AttachStdout: true,
 				AttachStderr: true
 			};
-
+			//reload loadbalancer nginx
 			container.exec(options, function(err, exec) {
 				if (err) return;
 				exec.start(function(err, stream) {
@@ -248,7 +253,7 @@ async function deleteNewNginxNode()
 		});
 	}
 }
-
+// function to search namekey in some array
 function search(nameKey, myArray){
     for (var i=0; i < myArray.length; i++) {
         if (myArray[i].name === nameKey) {
@@ -256,7 +261,7 @@ function search(nameKey, myArray){
         }
     }
 }
-
+// remove some key/value from array
 function arrayRemove(arr, value) {
 
    return arr.filter(function(ele){
@@ -271,24 +276,30 @@ async function createNewNginxNode()
 	let randomNginxIp = "";
 	let nginxlbId = "";
 	let containerNumber = onlineNginxNodeContainers.length;
+	//push to array new nginx node container
 	onlineNginxNodeContainers.push({name: 'cwc-nginx-'+containerNumber});
+	//get loadbalancer container id
 	for (let i = 0; i < onlineContainers.length; i++) {
 		if(onlineContainers[i].name == rootContainers.nginxlb.name)
 		{
 			nginxlbId = onlineContainers[i].id;
 		}
 	}
+	// generate new ip /24
 	while (true) 
 	{
 	  	randomPhpIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
+	    //verify if ip is not in use
 	    if(!usedIps.includes(randomPhpIp))
 	    {
 	    	console.log(randomPhpIp);
 	    	break;
 	    }
 	}
+	//start phpfpm node container
 	startContainer('php-fpm', 'cwc-php-fpm-'+containerNumber, [absolutePath+'/html:/var/www/html'],randomPhpIp);
 	console.log("startContainer: "+'php-fpm'+' '+'cwc-php-fpm-'+containerNumber+' '+[absolutePath+'/html:/var/www/html']+' '+randomPhpIp);
+	//create nginx node conf file
 	NginxConfFile.create(__dirname+'/http/conf.d/default.conf', function(err, conf) {
 		if (err) {
 			console.log(err);
@@ -301,17 +312,21 @@ async function createNewNginxNode()
 		conf.live(__dirname+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf');
 		conf.die(__dirname+'/http/conf.d/default.conf');
 	});
+	// generate new ip /24
 	while (true) 
 	{
 	  	randomNginxIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
+	  	//verify if ip is not in use
 	    if(!usedIps.includes(randomNginxIp))
 	    {
 	    	console.log(randomNginxIp);
 	    	break;
 	    }
 	}
+	// start nginx node container
 	startContainer('nginx', 'cwc-nginx-'+containerNumber, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf'],randomNginxIp);
 	console.log("startContainer: "+'nginx'+' '+'cwc-nginx-'+containerNumber+' '+[absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf']+' '+randomNginxIp);
+	//add ip of new nginx node container to loadbalancer conf
 	NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
 		if (err) {
 			console.log(err);
@@ -325,7 +340,7 @@ async function createNewNginxNode()
 		AttachStdout: true,
 		AttachStderr: true
 	};
-
+	//reload nginx service in loadbalancer 
 	container.exec(options, function(err, exec) {
 		if (err) return;
 		exec.start(function(err, stream) {
@@ -461,7 +476,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	}
 	else if(containerType == "grafana")
 	{
-		docker.createContainer({Image: 'tiagosantana/grafana', Cmd: [], name: containerName, 'ExposedPorts': { '3001/tcp': {} }, HostConfig: {PortBindings: {'3000/tcp': [{ HostPort: '3001' }]}}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } } }, function (err, container) {
+		docker.createContainer({Image: 'tiagosantana/grafana', Cmd: [], name: containerName, 'ExposedPorts': { '3001/tcp': {} }, HostConfig: {'Binds': containerBinds, "PortBindings": {'3000/tcp': [{ "HostPort": '3001' }]}}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } } }, function (err, container) {
 
 			container.start(function (err, data) {
 				console.log(data);
