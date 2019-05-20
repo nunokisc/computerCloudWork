@@ -9,7 +9,7 @@ var rootContainers = {
 	"telegraf": {name:'cwc-telegraf-master', ip:"172.18.0.7"},
 	"grafana": {name:'cwc-grafana-master', ip:"172.18.0.8"}
 };
-
+var reservedIps = ['172.18.0.12','172.18.0.22','172.18.0.32'];
 var Docker = require('dockerode');
 var docker = new Docker({socketPath: '/var/run/docker.sock'});
 const Influx = require('influx')
@@ -33,6 +33,8 @@ var requestsLimitToSpawn = 25;
 var requestsLimitToSpawnPropagation = 25;
 var connectionsLimitToSpawn = 25;
 var connectionsLimitToSpawnPropagation = 25;
+//add array to reserved ips to loadbalancers to usedIps
+usedIps = newArray = usedIps.concat(reservedIps);
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
 	let counter = 0;
