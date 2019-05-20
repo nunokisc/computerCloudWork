@@ -11,12 +11,12 @@ Este projecto consistem em escalar automaticamente em Docker um site em Wordpres
     docker pull telegraf
     docker pull tiagosantana/grafana
     docker network create --driver=bridge --subnet=172.18.0.0/16 br0
-    add to hosts file "172.18.0.2 www.computercloud.work"
     
    After: 
    
 	npm install
 	node index.js
+	go to cwc.cuscarias.com
 
 # State
 
