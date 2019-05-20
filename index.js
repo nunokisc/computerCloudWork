@@ -522,14 +522,30 @@ io.on('connection', function(socket){
 	socket.on('getRequestsLimitToSpawn',function(){
 		socket.emit('getRequestsLimitToSpawn',requestsLimitToSpawn);
 	})
+	socket.on('setRequestsLimitToSpawn',function(msg){
+		requestsLimitToSpawn = msg;
+		socket.emit('setRequestsLimitToSpawn','Valor alterado para: '+msg);
+	})
 	socket.on('getRequestsLimitToSpawnPropagation',function(){
 		socket.emit('getRequestsLimitToSpawnPropagation',requestsLimitToSpawnPropagation);
+	})
+	socket.on('setRequestsLimitToSpawnPropagation',function(msg){
+		requestsLimitToSpawnPropagation = msg;
+		socket.emit('setRequestsLimitToSpawnPropagation','Valor alterado para: '+msg);
 	})
 	socket.on('getConnectionsLimitToSpawn',function(){
 		socket.emit('getConnectionsLimitToSpawn',connectionsLimitToSpawn);
 	})
+	socket.on('setConnectionsLimitToSpawn',function(msg){
+		connectionsLimitToSpawn = msg;
+		socket.emit('setConnectionsLimitToSpawn','Valor alterado para: '+msg);
+	})
 	socket.on('getConnectionsLimitToSpawnPropagation',function(){
 		socket.emit('getConnectionsLimitToSpawnPropagation',connectionsLimitToSpawnPropagation);
+	})
+	socket.on('setConnectionsLimitToSpawnPropagation',function(msg){
+		connectionsLimitToSpawnPropagation = msg;
+		socket.emit('setConnectionsLimitToSpawnPropagation','Valor alterado para: '+msg);
 	})
 	socket.on('getRootContainers',function(){
 		socket.emit('getRootContainers',rootContainers);
