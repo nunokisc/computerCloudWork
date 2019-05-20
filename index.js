@@ -73,7 +73,7 @@ docker.listContainers(function (err, containers) {
 		startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],rootContainers.nginxlb.ip);
 		startContainer('influxdb', rootContainers.influxdb.name, [],rootContainers.influxdb.ip);
 		startContainer('telegraf', rootContainers.telegraf.name, [absolutePath+'/telegraf:/etc/telegraf'],rootContainers.telegraf.ip);
-		startContainer('grafana', rootContainers.grafana.name, [absolutePath+'/grafana:/etc/grafana'],rootContainers.grafana.ip);
+		startContainer('grafana', rootContainers.grafana.name, [],rootContainers.grafana.ip);
 	}
 });
 
@@ -471,11 +471,6 @@ function startContainer(containerType, containerName, containerBinds, containerI
 				setTimeout(function(){
 					getContainerDataRunning(data.Config.Hostname);
 				},3000);
-				// espera 30secs ate arrancar o telegraf e o influx db para evitar timeout de querys
-				setTimeout(()=>{
-					//setInterval(getActiveConnections,1000);
-					setInterval(getRequestsPerSecond,1000);
-				},30000);
 			});
 		});
 	}
@@ -499,6 +494,27 @@ io.on('connection', function(socket){
 	})
 	socket.on('getOnlineNginxNodeContainers',function(){
 		socket.emit('getOnlineNginxNodeContainers',onlineNginxNodeContainers);
+	})
+	socket.on('getRequestsPerSecond',function(){
+		socket.emit('getRequestsPerSecond',requestsPerSecond);
+	})
+	socket.on('getActiveConnections',function(){
+		socket.emit('getActiveConnections',activeConnections);
+	})
+	socket.on('getRequestsLimitToSpawn',function(){
+		socket.emit('getRequestsLimitToSpawn',requestsLimitToSpawn);
+	})
+	socket.on('getRequestsLimitToSpawnPropagation',function(){
+		socket.emit('getRequestsLimitToSpawnPropagation',requestsLimitToSpawnPropagation);
+	})
+	socket.on('getConnectionsLimitToSpawn',function(){
+		socket.emit('getConnectionsLimitToSpawn',connectionsLimitToSpawn);
+	})
+	socket.on('getConnectionsLimitToSpawnPropagation',function(){
+		socket.emit('getConnectionsLimitToSpawnPropagation',connectionsLimitToSpawnPropagation);
+	})
+	socket.on('getRootContainers',function(){
+		socket.emit('getRootContainers',rootContainers);
 	})
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
