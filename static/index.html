@@ -70,38 +70,42 @@
       </nav>
     <div>
       <div class="container-fluid">
-        <h1 class="mt-4">Metricas</h1>
-        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&var-host=95d256f01adf&panelId=1" width="450" height="200" frameborder="0"></iframe>
-        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&var-host=95d256f01adf&panelId=2" width="450" height="200" frameborder="0"></iframe>
-        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&var-host=95d256f01adf&panelId=3" width="450" height="200" frameborder="0"></iframe>
-        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&var-host=95d256f01adf&panelId=4" width="450" height="200" frameborder="0"></iframe>
-        <br>
-        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&var-host=95d256f01adf&panelId=5" width="49%" height="300" frameborder="0"></iframe>
-        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&var-host=95d256f01adf&panelId=7" width="49%" height="300" frameborder="0"></iframe>
-        <br>
-        <iframe src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&var-host=95d256f01adf&panelId=8" width="99%" height="300" frameborder="0"></iframe>
+        <h1 class="mt-12">Metricas</h1>
+        <div style="margin-top:20px;" class="row">
+          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=1&from=now-1h&to=now"  frameborder="0"></iframe>
+          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=2&from=now-1h&to=now"  frameborder="0"></iframe>
+          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=3&from=now-1h&to=now"  frameborder="0"></iframe>
+          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=4&from=now-1h&to=now"  frameborder="0"></iframe>
+        </div>
+        <div style="margin-top:20px;" class="row">
+          <iframe class="col-6" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=5&from=now-1h&to=now" frameborder="0"></iframe>
+          <iframe class="col-6" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=7&from=now-1h&to=now" frameborder="0"></iframe>
+        </div>
+        <div style="margin-top:20px;" class="row">
+          <iframe class="col-12" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=8&from=now-1h&to=now" frameborder="0"></iframe>
+        </div>
 
 
+        <div style="margin-top:20px;" class="row">
+          <div class="col-6">
+            <h1 class="mt-6">Nodes</h1>
+            <table style="width:200; border:2px solid black; border-collapse:collapse;" id='thetable'>
+              <tr style="border:1px solid black">
+                <th style="border:1px solid black">Name</th>
+                <th>Ip</th>
+              </tr>
+            </table> 
+          </div>
+          <div class="col-6">
+            <h1 class="mt-6">Ips</h1>
+            <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable2'>
+              <tr style="border:1px solid black">
+                <th>Ip</th>
+              </tr>
+            </table> 
+          </div>
+        </div>
       </div>
-
-      <div style="width: 50%; float: left;">
-        <h1 class="mt-4">Nodes</h1>
-       <table style="width:200; border:2px solid black; border-collapse:collapse;" id='thetable'>
-        <tr style="border:1px solid black">
-          <th style="border:1px solid black">Name</th>
-          <th>Ip</th>
-        </tr>
-      </table> 
-      </div>
-      <div style="width: 50%; float: right;">
-      <h1 class="mt-4">Ips</h1>
-       <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable2'>
-        <tr style="border:1px solid black">
-          <th>Ip</th>
-        </tr>
-      </table> 
-    </div>
-  </div>
 
 
   </div>
