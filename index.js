@@ -107,14 +107,6 @@ function getRequestsPerSecond()
 	})
 }
 
-function deleteNewNginxNodeTimeOut()
-{
-	//apagar node passados x ms
-	setTimeout(()=>{
-		deleteNewNginxNode();
-	},10000);
-}
-
 function getActiveConnections()
 {
 	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
@@ -157,203 +149,6 @@ function getContainerDataRunning(id,initialStart)
 			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
 	}
-}
-
-async function deleteNewNginxNode()
-{
-	//verifica se existem nodes extra activos
-	if(onlineNginxNodeContainers.length > 0)
-	{
-		let nginxlbId = "";
-		// ve qual o id do loadbalancer
-		for (let i = 0; i < onlineContainers.length; i++) {
-			if(onlineContainers[i].name == rootContainers.nginxlb.name)
-			{
-				nginxlbId = onlineContainers[i].id;
-			}
-		}
-		// vai buscar o nome do container que esta no topo do array
-		let containerName = onlineNginxNodeContainers[0].name;
-		console.log(containerName);
-		// faz um substring para obter o numero do container apartir do nome
-		let containersNumber = containerName.substring(containerName.length-1,containerName.length);
-		console.log(containersNumber);
-		//apaga o registo do topo do array
-		onlineNginxNodeContainers.shift();
-		// pesquisa no array onlineContainers o container name e retorna o objecto
-		let onlineNginxContainer = search(containerName, onlineContainers);
-		// get container by id
-		let containerNginx = docker.getContainer(onlineNginxContainer.id);
-		// remove container e ip dos arrays
-		onlineContainers = arrayRemove(onlineContainers, onlineNginxContainer);
-		usedIps = arrayRemove(usedIps, onlineNginxContainer.ip);
-		
-		console.log(onlineNginxContainer.id);
-		// pesquisa no array onlineContainers o container name e retorna o objecto
-		let onlineFpmContainer =search("cwc-php-fpm-"+containersNumber, onlineContainers);
-		// get container by id
-		let containerFpm = docker.getContainer(onlineFpmContainer.id);
-		// remove container e ip dos arrays
-		onlineContainers = arrayRemove(onlineContainers, onlineFpmContainer);
-		usedIps = arrayRemove(usedIps, onlineFpmContainer.ip);
-		//get lb container by id
-		let container = docker.getContainer(nginxlbId);
-		// stop nginx node container
-		containerNginx.stop(function(){
-			// remove nginx node config from conf.d
-			fs.unlink(absolutePath+"/http/conf.d/"+containerName+".conf", (err) => {
-				if (err) {
-					console.error(err)
-					return
-				}
-			})
-			// stop and remove fpm node container
-			containerFpm.stop(function(){
-				containerFpm.remove();
-			});
-			//remove nginx node container
-			containerNginx.remove();
-			//remove nginx node ip from loadbalancer conf.d
-			NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
-				if (err) {
-					console.log(err);
-					return;
-				}
-				for (let i = 0; i < conf.nginx.upstream.server.length; i++) {
-					if(onlineNginxContainer.ip == conf.nginx.upstream.server[i]._value)
-					{
-						console.log("remove: "+conf.nginx.upstream.server[i]._value);
-						conf.nginx.upstream._remove('server',i);
-					}
-				}
-			});
-
-			var options = {
-				Cmd: ['bash', '-c', 'service nginx reload'],
-				AttachStdout: true,
-				AttachStderr: true
-			};
-			//reload loadbalancer nginx
-			container.exec(options, function(err, exec) {
-				if (err) return;
-				exec.start(function(err, stream) {
-					if (err) return;
-
-					container.modem.demuxStream(stream, process.stdout, process.stderr);
-
-					exec.inspect(function(err, data) {
-						if (err) return;
-						console.log(data);
-						console.log(usedIps);
-						console.log(onlineContainers);
-						console.log(onlineNginxNodeContainers);
-					});
-				});
-			});
-		});
-	}
-}
-// function to search namekey in some array
-function search(nameKey, myArray){
-    for (var i=0; i < myArray.length; i++) {
-        if (myArray[i].name === nameKey) {
-            return myArray[i];
-        }
-    }
-}
-// remove some key/value from array
-function arrayRemove(arr, value) {
-
-   return arr.filter(function(ele){
-       return ele != value;
-   });
-
-}
-
-async function createNewNginxNode()
-{
-	let randomPhpIp = "";
-	let randomNginxIp = "";
-	let nginxlbId = "";
-	let containerNumber = onlineNginxNodeContainers.length;
-	//push to array new nginx node container
-	onlineNginxNodeContainers.push({name: 'cwc-nginx-'+containerNumber});
-	//get loadbalancer container id
-	for (let i = 0; i < onlineContainers.length; i++) {
-		if(onlineContainers[i].name == rootContainers.nginxlb.name)
-		{
-			nginxlbId = onlineContainers[i].id;
-		}
-	}
-	// generate new ip /24
-	while (true) 
-	{
-	  	randomPhpIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
-	    //verify if ip is not in use
-	    if(!usedIps.includes(randomPhpIp))
-	    {
-	    	console.log(randomPhpIp);
-	    	break;
-	    }
-	}
-	//start phpfpm node container
-	startContainer('php-fpm', 'cwc-php-fpm-'+containerNumber, [absolutePath+'/html:/var/www/html'],randomPhpIp);
-	console.log("startContainer: "+'php-fpm'+' '+'cwc-php-fpm-'+containerNumber+' '+[absolutePath+'/html:/var/www/html']+' '+randomPhpIp);
-	//create nginx node conf file
-	NginxConfFile.create(__dirname+'/http/conf.d/default.conf', function(err, conf) {
-		if (err) {
-			console.log(err);
-			return;
-		}
-
-		//reading values
-		conf.nginx.server.add_header._value = "X_NODE cwc-nginx-"+containerNumber;
-		conf.nginx.server.location[1].fastcgi_pass._value = randomPhpIp+":9000";
-		conf.live(__dirname+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf');
-		conf.die(__dirname+'/http/conf.d/default.conf');
-	});
-	// generate new ip /24
-	while (true) 
-	{
-	  	randomNginxIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
-	  	//verify if ip is not in use
-	    if(!usedIps.includes(randomNginxIp))
-	    {
-	    	console.log(randomNginxIp);
-	    	break;
-	    }
-	}
-	// start nginx node container
-	startContainer('nginx', 'cwc-nginx-'+containerNumber, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf'],randomNginxIp);
-	console.log("startContainer: "+'nginx'+' '+'cwc-nginx-'+containerNumber+' '+[absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf']+' '+randomNginxIp);
-	//add ip of new nginx node container to loadbalancer conf
-	NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
-		if (err) {
-			console.log(err);
-			return;
-		}
-		conf.nginx.upstream._add('server', randomNginxIp);
-	});
-	let container = docker.getContainer(nginxlbId);
-	var options = {
-		Cmd: ['bash', '-c', 'service nginx reload'],
-		AttachStdout: true,
-		AttachStderr: true
-	};
-	//reload nginx service in loadbalancer 
-	container.exec(options, function(err, exec) {
-		if (err) return;
-		exec.start(function(err, stream) {
-			if (err) return;
-
-			container.modem.demuxStream(stream, process.stdout, process.stderr);
-
-			exec.inspect(function(err, data) {
-				if (err) return;
-				console.log(data);
-			});
-		});
-	});
 }
 
 // Iniciar container do tipo x com o nome x com array de binds e com o ip x (verficar se não esta em uso)
@@ -491,6 +286,212 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	}
 }
 
+async function createNewNginxNode()
+{
+	let randomPhpIp = "";
+	let randomNginxIp = "";
+	let nginxlbId = "";
+	let containerNumber = onlineNginxNodeContainers.length;
+	//push to array new nginx node container
+	onlineNginxNodeContainers.push({name: 'cwc-nginx-'+containerNumber});
+	//get loadbalancer container id
+	for (let i = 0; i < onlineContainers.length; i++) {
+		if(onlineContainers[i].name == rootContainers.nginxlb.name)
+		{
+			nginxlbId = onlineContainers[i].id;
+		}
+	}
+	// generate new ip /24
+	while (true) 
+	{
+	  	randomPhpIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
+	    //verify if ip is not in use
+	    if(!usedIps.includes(randomPhpIp))
+	    {
+	    	console.log(randomPhpIp);
+	    	break;
+	    }
+	}
+	//start phpfpm node container
+	startContainer('php-fpm', 'cwc-php-fpm-'+containerNumber, [absolutePath+'/html:/var/www/html'],randomPhpIp);
+	console.log("startContainer: "+'php-fpm'+' '+'cwc-php-fpm-'+containerNumber+' '+[absolutePath+'/html:/var/www/html']+' '+randomPhpIp);
+	//create nginx node conf file
+	NginxConfFile.create(__dirname+'/http/conf.d/default.conf', function(err, conf) {
+		if (err) {
+			console.log(err);
+			return;
+		}
+
+		//reading values
+		conf.nginx.server.add_header._value = "X_NODE cwc-nginx-"+containerNumber;
+		conf.nginx.server.location[1].fastcgi_pass._value = randomPhpIp+":9000";
+		conf.live(__dirname+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf');
+		conf.die(__dirname+'/http/conf.d/default.conf');
+	});
+	// generate new ip /24
+	while (true) 
+	{
+	  	randomNginxIp = "172.18.0."+(Math.floor(Math.random() * 255) + 2);
+	  	//verify if ip is not in use
+	    if(!usedIps.includes(randomNginxIp))
+	    {
+	    	console.log(randomNginxIp);
+	    	break;
+	    }
+	}
+	// start nginx node container
+	startContainer('nginx', 'cwc-nginx-'+containerNumber, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf'],randomNginxIp);
+	console.log("startContainer: "+'nginx'+' '+'cwc-nginx-'+containerNumber+' '+[absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/cwc-nginx-'+containerNumber+'.conf:/etc/nginx/conf.d/default.conf']+' '+randomNginxIp);
+	//add ip of new nginx node container to loadbalancer conf
+	NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
+		if (err) {
+			console.log(err);
+			return;
+		}
+		conf.nginx.upstream._add('server', randomNginxIp);
+	});
+	let container = docker.getContainer(nginxlbId);
+	var options = {
+		Cmd: ['bash', '-c', 'service nginx reload'],
+		AttachStdout: true,
+		AttachStderr: true
+	};
+	//reload nginx service in loadbalancer 
+	container.exec(options, function(err, exec) {
+		if (err) return;
+		exec.start(function(err, stream) {
+			if (err) return;
+
+			container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+			exec.inspect(function(err, data) {
+				if (err) return;
+				console.log(data);
+			});
+		});
+	});
+}
+
+async function deleteNewNginxNode()
+{
+	//verifica se existem nodes extra activos
+	if(onlineNginxNodeContainers.length > 0)
+	{
+		let nginxlbId = "";
+		// ve qual o id do loadbalancer
+		for (let i = 0; i < onlineContainers.length; i++) {
+			if(onlineContainers[i].name == rootContainers.nginxlb.name)
+			{
+				nginxlbId = onlineContainers[i].id;
+			}
+		}
+		// vai buscar o nome do container que esta no topo do array
+		let containerName = onlineNginxNodeContainers[0].name;
+		console.log(containerName);
+		// faz um substring para obter o numero do container apartir do nome
+		let containersNumber = containerName.substring(containerName.length-1,containerName.length);
+		console.log(containersNumber);
+		//apaga o registo do topo do array
+		onlineNginxNodeContainers.shift();
+		// pesquisa no array onlineContainers o container name e retorna o objecto
+		let onlineNginxContainer = search(containerName, onlineContainers);
+		// get container by id
+		let containerNginx = docker.getContainer(onlineNginxContainer.id);
+		// remove container e ip dos arrays
+		onlineContainers = arrayRemove(onlineContainers, onlineNginxContainer);
+		usedIps = arrayRemove(usedIps, onlineNginxContainer.ip);
+		
+		console.log(onlineNginxContainer.id);
+		// pesquisa no array onlineContainers o container name e retorna o objecto
+		let onlineFpmContainer =search("cwc-php-fpm-"+containersNumber, onlineContainers);
+		// get container by id
+		let containerFpm = docker.getContainer(onlineFpmContainer.id);
+		// remove container e ip dos arrays
+		onlineContainers = arrayRemove(onlineContainers, onlineFpmContainer);
+		usedIps = arrayRemove(usedIps, onlineFpmContainer.ip);
+		//get lb container by id
+		let container = docker.getContainer(nginxlbId);
+		// stop nginx node container
+		containerNginx.stop(function(){
+			// remove nginx node config from conf.d
+			fs.unlink(absolutePath+"/http/conf.d/"+containerName+".conf", (err) => {
+				if (err) {
+					console.error(err)
+					return
+				}
+			})
+			// stop and remove fpm node container
+			containerFpm.stop(function(){
+				containerFpm.remove();
+			});
+			//remove nginx node container
+			containerNginx.remove();
+			//remove nginx node ip from loadbalancer conf.d
+			NginxConfFile.create(__dirname+'/loadbalancer/conf.d/0-default.conf', function(err, conf) {
+				if (err) {
+					console.log(err);
+					return;
+				}
+				for (let i = 0; i < conf.nginx.upstream.server.length; i++) {
+					if(onlineNginxContainer.ip == conf.nginx.upstream.server[i]._value)
+					{
+						console.log("remove: "+conf.nginx.upstream.server[i]._value);
+						conf.nginx.upstream._remove('server',i);
+					}
+				}
+			});
+
+			var options = {
+				Cmd: ['bash', '-c', 'service nginx reload'],
+				AttachStdout: true,
+				AttachStderr: true
+			};
+			//reload loadbalancer nginx
+			container.exec(options, function(err, exec) {
+				if (err) return;
+				exec.start(function(err, stream) {
+					if (err) return;
+
+					container.modem.demuxStream(stream, process.stdout, process.stderr);
+
+					exec.inspect(function(err, data) {
+						if (err) return;
+						console.log(data);
+						console.log(usedIps);
+						console.log(onlineContainers);
+						console.log(onlineNginxNodeContainers);
+					});
+				});
+			});
+		});
+	}
+}
+
+// delete nginx node with some timeout
+function deleteNewNginxNodeTimeOut()
+{
+	//apagar node passados x ms
+	setTimeout(()=>{
+		deleteNewNginxNode();
+	},10000);
+}
+
+// function to search namekey in some array
+function search(nameKey, myArray){
+    for (var i=0; i < myArray.length; i++) {
+        if (myArray[i].name === nameKey) {
+            return myArray[i];
+        }
+    }
+}
+// remove some key/value from array
+function arrayRemove(arr, value) {
+
+   return arr.filter(function(ele){
+       return ele != value;
+   });
+
+}
 
 var htmlPath = path.join(absolutePath, 'static');
 app.use(express.static(htmlPath));
