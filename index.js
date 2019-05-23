@@ -354,7 +354,7 @@ async function createNewNginxNode()
 	});
 	let container = docker.getContainer(nginxlbId);
 	var options = {
-		Cmd: ['bash', '-c', 'service nginx reload'],
+		Cmd: ['/usr/sbin/nginx', '-s', 'reload'],
 		AttachStdout: true,
 		AttachStderr: true
 	};
@@ -444,7 +444,7 @@ async function deleteNewNginxNode()
 			});
 
 			var options = {
-				Cmd: ['bash', '-c', 'service nginx reload'],
+				Cmd: ['/usr/sbin/nginx', '-s', 'reload'],
 				AttachStdout: true,
 				AttachStderr: true
 			};
