@@ -69,12 +69,11 @@ docker.listContainers(function (err, containers) {
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/default.conf:/etc/nginx/conf.d/default.conf'],rootContainers.nginx.ip);
+		startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/default.conf:/etc/nginx/conf.d/default.conf',absolutePath+'/telegraf:/etc/telegraf'],rootContainers.nginx.ip);
 		startContainer('php-fpm', rootContainers.php.name, [absolutePath+'/html:/var/www/html'],rootContainers.php.ip)
 		startContainer('mysql-server', rootContainers.mysql.name, [absolutePath+'/db:/docker-entrypoint-initdb.d/'],rootContainers.mysql.ip);
-		startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d'],rootContainers.nginxlb.ip);
+		startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d',absolutePath+'/telegraf:/etc/telegraf'],rootContainers.nginxlb.ip);
 		startContainer('influxdb', rootContainers.influxdb.name, [],rootContainers.influxdb.ip);
-		startContainer('telegraf', rootContainers.telegraf.name, [absolutePath+'/telegraf:/etc/telegraf'],rootContainers.telegraf.ip);
 		startContainer('grafana', rootContainers.grafana.name, [],rootContainers.grafana.ip);
 	}
 });
@@ -211,7 +210,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 	{
 		if(containerName == 'cwc-nginxlb-master')
 		{
-			docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, 'ExposedPorts': { '80/tcp': {} }, HostConfig: {'Binds': containerBinds, "PortBindings": { "80/tcp": [{ "HostPort": "80" }] }}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
+			docker.createContainer({Image: 'kisc/nginx-telegraf', Cmd: ['/bin/bash', '-c', "service telegraf start ; nginx -g 'daemon off;'"], name: containerName, 'ExposedPorts': { '80/tcp': {} }, HostConfig: {'Binds': containerBinds, "PortBindings": { "80/tcp": [{ "HostPort": "80" }] }}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
 				container.start(function (err, data) {
 					console.log(data);
 				});
@@ -225,7 +224,7 @@ function startContainer(containerType, containerName, containerBinds, containerI
 		}
 		else
 		{
-			docker.createContainer({Image: 'nginx', Cmd: ['nginx', '-g', 'daemon off;'], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
+			docker.createContainer({Image: 'kisc/nginx-telegraf', Cmd: ['/bin/bash', '-c', "service telegraf start ; nginx -g 'daemon off;'"], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
 				container.start(function (err, data) {
 					console.log(data);
 				});
@@ -249,25 +248,6 @@ function startContainer(containerType, containerName, containerBinds, containerI
 				setTimeout(function(){
 					getContainerDataRunning(data.Config.Hostname,false);
 				},3000);
-			});
-		});
-	}
-	else if(containerType == "telegraf")
-	{
-		docker.createContainer({Image: 'telegraf', Cmd: [], name: containerName, HostConfig: {'Binds': containerBinds}, NetworkingConfig: { "EndpointsConfig": { "br0": { "IPAMConfig": { "IPv4Address": containerIp} } } }}, function (err, container) {
-			container.start(function (err, data) {
-				console.log(data);
-			});
-			//inspect para retornar o nome e ip da maquina iniciada
-			container.inspect(function (err, data) {
-				setTimeout(function(){
-					getContainerDataRunning(data.Config.Hostname);
-				},3000);
-				// espera 30secs ate arrancar o telegraf e o influx db para evitar timeout de querys
-				setTimeout(()=>{
-					//setInterval(getActiveConnections,1000);
-					setInterval(getRequestsPerSecond,1000);
-				},30000);
 			});
 		});
 	}
