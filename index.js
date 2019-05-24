@@ -6,7 +6,6 @@ var rootContainers = {
 	"mysql": {name:'cwc-mysql-master', ip:"172.18.0.4"},
 	"nginxlb": {name:'cwc-nginxlb-master', ip:"172.18.0.2"},
 	"influxdb": {name:'cwc-influxdb-master', ip:"172.18.0.6"},
-	"telegraf": {name:'cwc-telegraf-master', ip:"172.18.0.7"},
 	"grafana": {name:'cwc-grafana-master', ip:"172.18.0.8"}
 };
 var reservedIps = ['172.18.0.12','172.18.0.22','172.18.0.32'];
