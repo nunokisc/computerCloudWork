@@ -137,7 +137,7 @@ function getContainerDataRunning(id,initialStart)
 		let container = docker.getContainer(id);
 		container.inspect(function (err, data) {
 			usedIps.push(data.NetworkSettings.Networks.br0.IPAddress);
-			onlineContainers.push({name:data.Name.substring(1,data.Name.length) ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
+			onlineContainers.push({name:data.Name.substring(1,data.Name.length), id:data.Id, ip:data.NetworkSettings.Networks.br0.IPAddress, hostname:id});
 			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
 	}
@@ -145,7 +145,7 @@ function getContainerDataRunning(id,initialStart)
 	{
 		let container = docker.getContainer(id);
 		container.inspect(function (err, data) {
-			onlineContainers.push({name:data.Name.substring(1,data.Name.length) ,id:data.Id ,ip:data.NetworkSettings.Networks.br0.IPAddress});
+			onlineContainers.push({name:data.Name.substring(1,data.Name.length), id:data.Id, ip:data.NetworkSettings.Networks.br0.IPAddress,hostname:id});
 			console.log(data.Name + ' ' + data.NetworkSettings.Networks.br0.IPAddress + ' Online');
 		});
 	}
