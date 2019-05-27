@@ -16,6 +16,11 @@ var rootContainers = {
 	"grafana": {name:'cwc-grafana-master', ip:"172.18.0.8"}
 };
 var reservedIps = ['172.18.0.12','172.18.0.22','172.18.0.32'];
+const Influx = require('influx')
+const influx = new Influx.InfluxDB({
+  host: rootContainers.influxdb.ip,
+  database: 'telegraf'
+})
 var requestsPerSecond = 0;
 var activeConnections = 0;
 var requestsLimitToSpawn = 25;
@@ -25,6 +30,7 @@ var connectionsLimitToSpawnPropagation = 25;
 //add array to reserved ips to loadbalancers to usedIps
 containers.setReservedIps(reservedIps);
 containers.setRootContainers(rootContainers);
+
 containers.docker.listContainers(function (err, dockerContainers) {
 	//verificar se existem dockerContainers a correr
 	let counter = 0;
@@ -50,7 +56,7 @@ containers.docker.listContainers(function (err, dockerContainers) {
 			if(containerName == rootContainers.influxdb.name)
 			{
 				//setInterval(getActiveConnections,1000);
-				//setInterval(getRequestsPerSecond,1000);
+				setInterval(getRequestsPerSecond,1000);
 			}
 		});
 	}
@@ -79,6 +85,40 @@ containers.docker.listContainers(function (err, dockerContainers) {
 		});
 	}
 });
+
+function getRequestsPerSecond()
+{
+	// query para receber os valores de rps
+	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
+		requestsPerSecond = results[0].requestsPerSecond;
+	  	console.log("rps: "+results[0].requestsPerSecond);
+	  	//caso os rps sejam maiores que o max do master node spawn um novo node
+	  	if(requestsPerSecond > requestsLimitToSpawn)
+	  	{
+	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
+	  		nginx_nodes.createNewNginxNode(absolutePath,function(){
+	  			console.log("arrancou um node");
+	  		})
+	  		console.log("req: limit "+requestsLimitToSpawn);
+	  	}
+	  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
+	  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
+	  	{
+	  		//apenas apagar ate ao limite minimo
+	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
+	  		{
+	  			console.log("eliminar coiso");
+	  			// diminuir os limite para o level abaixo
+	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+	  			setTimeout(()=>{
+	  				nginx_nodes.deleteNewNginxNode(absolutePath,function(){
+			  			console.log("Apagou um node");
+			  		})
+	  			},10000);
+	  		}	
+	  	}
+	})
+}
 			
 
 var htmlPath = path.join(absolutePath, 'static');
@@ -91,10 +131,59 @@ http.listen(3000, function(){
 io.on('connection', function(socket){
 	console.log('a user connected');
 	socket.on('getOnlineContainers',function(){
-		socket.emit('getOnlineContainers',containers.getOnlineContainers);
+		containers.getOnlineContainers(function(onlineContainers){
+			socket.emit('getOnlineContainers',onlineContainers);
+		})
 	})
 	socket.on('getUsedIps',function(){
-		socket.emit('getUsedIps',containers.getUsedIps);
+		containers.getUsedIps(function(usedIps){
+			socket.emit('getUsedIps',usedIps);
+		})
 	})
+	socket.on('getOnlineNginxNodeContainers',function(){
+		nginx_nodes.getOnlineNginxNodeContainers(function(onlineNginxNodeContainers){
+			socket.emit('getOnlineNginxNodeContainers',onlineNginxNodeContainers);
+		})
+	})
+	socket.on('getRequestsPerSecond',function(){
+		socket.emit('getRequestsPerSecond',requestsPerSecond);
+	})
+	socket.on('getActiveConnections',function(){
+		socket.emit('getActiveConnections',activeConnections);
+	})
+	socket.on('getRequestsLimitToSpawn',function(){
+		socket.emit('getRequestsLimitToSpawn',requestsLimitToSpawn);
+	})
+	socket.on('setRequestsLimitToSpawn',function(msg){
+		requestsLimitToSpawn = msg;
+		socket.emit('setRequestsLimitToSpawn','Valor alterado para: '+msg);
+	})
+	socket.on('getRequestsLimitToSpawnPropagation',function(){
+		socket.emit('getRequestsLimitToSpawnPropagation',requestsLimitToSpawnPropagation);
+	})
+	socket.on('setRequestsLimitToSpawnPropagation',function(msg){
+		requestsLimitToSpawnPropagation = msg;
+		socket.emit('setRequestsLimitToSpawnPropagation','Valor alterado para: '+msg);
+	})
+	socket.on('getConnectionsLimitToSpawn',function(){
+		socket.emit('getConnectionsLimitToSpawn',connectionsLimitToSpawn);
+	})
+	socket.on('setConnectionsLimitToSpawn',function(msg){
+		connectionsLimitToSpawn = msg;
+		socket.emit('setConnectionsLimitToSpawn','Valor alterado para: '+msg);
+	})
+	socket.on('getConnectionsLimitToSpawnPropagation',function(){
+		socket.emit('getConnectionsLimitToSpawnPropagation',connectionsLimitToSpawnPropagation);
+	})
+	socket.on('setConnectionsLimitToSpawnPropagation',function(msg){
+		connectionsLimitToSpawnPropagation = msg;
+		socket.emit('setConnectionsLimitToSpawnPropagation','Valor alterado para: '+msg);
+	})
+	socket.on('getRootContainers',function(){
+		socket.emit('getRootContainers',rootContainers);
+	})
+	socket.on('disconnect', function(){
+		console.log('user disconnected');
+	});
 });
 
