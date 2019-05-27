@@ -71,17 +71,17 @@
     <div>
       <div class="container-fluid">
         <h1 class="mt-12">Metricas</h1>
-        <div style="margin-top:20px;" class="row">
+        <div style="margin-top:20px;" class="row" id="row1">
           <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=1&from=now-1h&to=now"  frameborder="0"></iframe>
           <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=2&from=now-1h&to=now"  frameborder="0"></iframe>
           <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=3&from=now-1h&to=now"  frameborder="0"></iframe>
           <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=4&from=now-1h&to=now"  frameborder="0"></iframe>
         </div>
-        <div style="margin-top:20px;" class="row">
+        <div style="margin-top:20px;" class="row" id="row2">
           <iframe class="col-6" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=5&from=now-1h&to=now" frameborder="0"></iframe>
           <iframe class="col-6" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=7&from=now-1h&to=now" frameborder="0"></iframe>
         </div>
-        <div style="margin-top:20px;" class="row">
+        <div style="margin-top:20px;" class="row" id="row3">
           <iframe class="col-12" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=8&from=now-1h&to=now" frameborder="0"></iframe>
         </div>
 
@@ -93,6 +93,7 @@
               <tr style="border:1px solid black">
                 <th style="border:1px solid black">Name</th>
                 <th>Ip</th>
+                <th>hostnames</th>
               </tr>
             </table> 
           </div>
@@ -141,7 +142,7 @@
    var html = '';
    for(var i = 0; i < msg.length; i++)
     html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
-  '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
+  '</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> <a href="#" onclick="showGrafanaIframe(\''+msg[i].hostname+'\');" >' + msg[i].hostname + '</a></td></tr>';
   $('#thetable tr').first().after(html);
 
 })
@@ -163,6 +164,37 @@
  $('#poke').click(function () {
    socket.emit('getOnlineContainers','');
  })
+
+ function createIframe(host,hostname,panelId,col){
+  return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
+ }
+
+  function createIframe2(host,hostname,panelId,col){
+  return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
+ }
+
+  function createIframe3(host,hostname,panelId,col){
+  return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
+ }
+
+ function showGrafanaIframe(hostname){
+  console.log(hostname)
+  let host = $(location).attr('hostname');
+  let panelId = 1;
+  let col = 3;
+  $("#row1").html("");
+  $("#row2").html("");
+  $("#row3").html("");
+  for (let i = 1; i <= 4; i++) {
+      $("#row1").append(createIframe(host,hostname,i,3));
+  }
+  for (let i = 5; i <= 7; i=i+2) {
+      $("#row2").append(createIframe2(host,hostname,i,6));
+  }
+  $("#row3").append(createIframe3(host,hostname,8,12));
+  $("#row3").append(createIframe3(host,hostname,31,12));
+  $("#row3").append(createIframe3(host,hostname,32,12));
+ }
 </script>
 
 
