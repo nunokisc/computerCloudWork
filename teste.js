@@ -1,4 +1,5 @@
 var containers = require('./lib/containers.js');
+var nginx_nodes = require('./lib/nginx_nodes.js');
 var express = require('express');
 var app = express();
 var http = require('http').createServer(app);
@@ -22,9 +23,8 @@ var requestsLimitToSpawnPropagation = 25;
 var connectionsLimitToSpawn = 25;
 var connectionsLimitToSpawnPropagation = 25;
 //add array to reserved ips to loadbalancers to usedIps
-containers.addReservedIps(reservedIps,function(data){
-	console.log(data);
-})
+containers.setReservedIps(reservedIps);
+containers.setRootContainers(rootContainers);
 containers.docker.listContainers(function (err, dockerContainers) {
 	//verificar se existem dockerContainers a correr
 	let counter = 0;
@@ -41,7 +41,7 @@ containers.docker.listContainers(function (err, dockerContainers) {
 				counter ++;
 				if(containerName.includes('cwc-nginx-') && !containerName.includes(rootContainers.nginx.name))
 				{
-					onlineNginxNodeContainers.push({name:containerName});
+					nginx_nodes.setOnlineNginxNodeContainers({name:containerName});
 					requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 				}
 			}
@@ -59,7 +59,7 @@ containers.docker.listContainers(function (err, dockerContainers) {
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		containers.startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/default.conf:/etc/nginx/conf.d/default.conf',absolutePath+'/telegraf:/etc/telegraf'],rootContainers.nginx.ip, function (data, initialStart){
+		containers.startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/default.conf:/etc/nginx/conf.d/default.conf',absolutePath+'/http/conf.d/0-default.conf:/etc/nginx/conf.d/0-default.conf',absolutePath+'/telegraf:/etc/telegraf'],rootContainers.nginx.ip, function (data, initialStart){
 			containers.getContainerDataRunning(data.Config.Hostname,initialStart);
 		});
 		containers.startContainer('php-fpm', rootContainers.php.name, [absolutePath+'/html:/var/www/html'],rootContainers.php.ip, function (data, initialStart){
@@ -79,6 +79,7 @@ containers.docker.listContainers(function (err, dockerContainers) {
 		});
 	}
 });
+			
 
 var htmlPath = path.join(absolutePath, 'static');
 app.use(express.static(htmlPath));
