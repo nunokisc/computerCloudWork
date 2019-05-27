@@ -43,7 +43,7 @@ containers.docker.listContainers(function (err, dockerContainers) {
 			// verficiar se o container é cwc
 			if(containerInfo.Names[0].substring(1,4) == containerInitials)
 			{
-				containers.getContainerDataRunning(containerInfo.Id,true);
+				containers.getContainerDataRunning(containerInfo.Id.substring(0,12),true);
 				counter ++;
 				if(containerName.includes('cwc-nginx-') && !containerName.includes(rootContainers.nginx.name))
 				{
