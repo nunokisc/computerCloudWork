@@ -33,7 +33,7 @@ var requestsLimitToSpawnPropagation = 25;
 var connectionsLimitToSpawn = 25;
 var connectionsLimitToSpawnPropagation = 25;
 //add array to reserved ips to loadbalancers to usedIps
-usedIps = newArray = usedIps.concat(reservedIps);
+usedIps = usedIps.concat(reservedIps);
 docker.listContainers(function (err, containers) {
 	//verificar se existem containers a correr
 	let counter = 0;
