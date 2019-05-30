@@ -23,8 +23,8 @@ const influx = new Influx.InfluxDB({
 })
 var requestsPerSecond = 0;
 var activeConnections = 0;
-var requestsLimitToSpawn = 25;
-var requestsLimitToSpawnPropagation = 25;
+var requestsLimitToSpawn = 50;
+var requestsLimitToSpawnPropagation = 50;
 var connectionsLimitToSpawn = 25;
 var connectionsLimitToSpawnPropagation = 25;
 //add array to reserved ips to loadbalancers to usedIps
