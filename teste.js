@@ -27,6 +27,7 @@ var requestsLimitToSpawn = 50;
 var requestsLimitToSpawnPropagation = 50;
 var connectionsLimitToSpawn = 25;
 var connectionsLimitToSpawnPropagation = 25;
+var timeOutDel = [];
 //add array to reserved ips to loadbalancers to usedIps
 containers.setReservedIps(reservedIps);
 containers.setRootContainers(rootContainers);
@@ -56,7 +57,7 @@ containers.docker.listContainers(function (err, dockerContainers) {
 			if(containerName == rootContainers.influxdb.name)
 			{
 				//setInterval(getActiveConnections,1000);
-				setInterval(getRequestsPerSecond,1000);
+				setInterval(getRequestsPerSecond,1100);
 			}
 		});
 	}
@@ -96,9 +97,19 @@ function getRequestsPerSecond()
 	  	if(requestsPerSecond > requestsLimitToSpawn)
 	  	{
 	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
-	  		nginx_nodes.createNewNginxNode(absolutePath,function(){
-	  			console.log("arrancou um node");
-	  		})
+	  		/*if(timeOutDel.length > 0)
+	  		{
+	  			clearTimeout(timeOutDel[timeOutDel-1]);
+	  			timeOutDel.splice(timeOutDel-1, 1);
+	  			console.log(timeOutDel);
+	  			console.log("cancelou timeout de node a ser apagado");
+	  		}
+	  		else
+	  		{*/
+	  			nginx_nodes.createNewNginxNode(absolutePath,function(){
+		  			console.log("arrancou um node");
+		  		})
+	  		//}
 	  		console.log("req: limit "+requestsLimitToSpawn);
 	  	}
 	  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
@@ -107,14 +118,16 @@ function getRequestsPerSecond()
 	  		//apenas apagar ate ao limite minimo
 	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
 	  		{
-	  			console.log("eliminar coiso");
+	  			console.log("adicionou node a timeout");
+	  			//console.log(timeOutDel);
 	  			// diminuir os limite para o level abaixo
 	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
-	  			setTimeout(()=>{
+	  			timeOutDel.push(setTimeout(()=>{
 	  				nginx_nodes.deleteNewNginxNode(absolutePath,function(){
+	  					//timeOutDel.splice(timeOutDel-1, 1);
 			  			console.log("Apagou um node");
 			  		})
-	  			},10000);
+	  			},10000));
 	  		}	
 	  	}
 	})
