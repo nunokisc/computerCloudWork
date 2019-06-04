@@ -1,5 +1,6 @@
 var containers = require('./lib/containers.js');
 var nginx_nodes = require('./lib/nginx_nodes.js');
+var nginxlb_nodes = require('./lib/nginxlb_nodes.js');
 var express = require('express');
 var app = express();
 var http = require('http').createServer(app);
@@ -52,6 +53,10 @@ containers.docker.listContainers(function (err, dockerContainers)
 					nginx_nodes.setOnlineNginxNodeContainers({name:containerName});
 					requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 				}
+				else if(containerName.includes('cwc-nginxlb-') && !containerName.includes(rootContainers.nginxlb.name))
+				{
+					nginxlb_nodes.setOnlineNginxLbNodeContainers({name:containerName});
+				}
 			}
 
 			// verifica se o container é o influxdb
@@ -59,6 +64,11 @@ containers.docker.listContainers(function (err, dockerContainers)
 			{
 				//setInterval(getActiveConnections,1000);
 				setInterval(getRequestsPerSecond,1100);
+				/*setTimeout(()=>{
+					nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
+		  				console.log("arrancou um node lb");
+		  			})
+				},3000)*/
 			}
 		});
 	}
