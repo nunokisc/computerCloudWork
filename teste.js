@@ -64,11 +64,16 @@ containers.docker.listContainers(function (err, dockerContainers)
 			{
 				//setInterval(getActiveConnections,1000);
 				setInterval(getRequestsPerSecond,1100);
-				/*setTimeout(()=>{
+				setTimeout(()=>{
 					nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
 		  				console.log("arrancou um node lb");
 		  			})
-				},3000)*/
+				},3000)
+				setTimeout(()=>{
+		  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
+		  				console.log(msg);
+		  			})
+	  			},4000)
 			}
 		});
 	}
