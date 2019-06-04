@@ -23,11 +23,10 @@ const influx = new Influx.InfluxDB({
 })
 var requestsPerSecond = 0;
 var activeConnections = 0;
-var requestsLimitToSpawn = 50;
-var requestsLimitToSpawnPropagation = 50;
+var requestsLimitToSpawn = 10;
+var requestsLimitToSpawnPropagation = 10;
 var connectionsLimitToSpawn = 25;
 var connectionsLimitToSpawnPropagation = 25;
-var timeOutDel = [];
 //add array to reserved ips to loadbalancers to usedIps
 containers.setReservedIps(reservedIps);
 containers.setRootContainers(rootContainers);
@@ -97,19 +96,19 @@ function getRequestsPerSecond()
 	  	if(requestsPerSecond > requestsLimitToSpawn)
 	  	{
 	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
-	  		/*if(timeOutDel.length > 0)
-	  		{
-	  			clearTimeout(timeOutDel[timeOutDel-1]);
-	  			timeOutDel.splice(timeOutDel-1, 1);
-	  			console.log(timeOutDel);
-	  			console.log("cancelou timeout de node a ser apagado");
-	  		}
-	  		else
-	  		{*/
-	  			nginx_nodes.createNewNginxNode(absolutePath,function(){
-		  			console.log("arrancou um node");
-		  		})
-	  		//}
+	  		nginx_nodes.getTimeOutDel(function(timeOutDel){
+	  			if(timeOutDel.length > 0)
+	  			{
+	  				console.log("clear TIMEOUT");
+	  				nginx_nodes.clearTimeOutDel();
+	  			}
+	  			else
+	  			{
+	  				nginx_nodes.createNewNginxNode(absolutePath,function(){
+			  			console.log("arrancou um node");
+			  		})
+	  			}
+	  		})
 	  		console.log("req: limit "+requestsLimitToSpawn);
 	  	}
 	  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
@@ -119,15 +118,11 @@ function getRequestsPerSecond()
 	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
 	  		{
 	  			console.log("adicionou node a timeout");
-	  			//console.log(timeOutDel);
 	  			// diminuir os limite para o level abaixo
 	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
-	  			timeOutDel.push(setTimeout(()=>{
-	  				nginx_nodes.deleteNewNginxNode(absolutePath,function(){
-	  					//timeOutDel.splice(timeOutDel-1, 1);
-			  			console.log("Apagou um node");
-			  		})
-	  			},10000));
+	  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+	  				console.log(msg);
+	  			})
 	  		}	
 	  	}
 	})
