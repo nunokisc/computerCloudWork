@@ -31,13 +31,15 @@ var connectionsLimitToSpawnPropagation = 25;
 containers.setReservedIps(reservedIps);
 containers.setRootContainers(rootContainers);
 
-containers.docker.listContainers(function (err, dockerContainers) {
+containers.docker.listContainers(function (err, dockerContainers) 
+{
 	//verificar se existem dockerContainers a correr
 	let counter = 0;
 	if(dockerContainers.length > 0)
 	{
 		//retornar o nome e ip da maquina iniciada
-		dockerContainers.forEach(function (containerInfo) {
+		dockerContainers.forEach(function (containerInfo) 
+		{
 			//console.log(containerInfo.Names[0]);
 			let containerName = containerInfo.Names[0].substring(1,containerInfo.Names[0].length);
 			// verficiar se o container é cwc
@@ -96,7 +98,8 @@ function getRequestsPerSecond()
 	  	if(requestsPerSecond > requestsLimitToSpawn)
 	  	{
 	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
-	  		nginx_nodes.getTimeOutDel(function(timeOutDel){
+	  		nginx_nodes.getTimeOutDel(function(timeOutDel)
+	  		{
 	  			if(timeOutDel.length > 0)
 	  			{
 	  				console.log("clear TIMEOUT");
