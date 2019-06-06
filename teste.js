@@ -24,6 +24,7 @@ const influx = new Influx.InfluxDB({
 })
 var requestsPerSecond = 0;
 var activeConnections = 0;
+var autoMode = true; 
 var requestsLimitToSpawn = 50;
 var requestsLimitToSpawnPropagation = 50;
 var connectionsLimitToSpawn = 200;
@@ -96,86 +97,92 @@ containers.docker.listContainers(function (err, dockerContainers)
 
 function getRequestsPerSecond()
 {
-	// query para receber os valores de rps
-	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
-		requestsPerSecond = results[0].requestsPerSecond;
-	  	console.log("rps: "+results[0].requestsPerSecond);
-	  	if(requestsPerSecond > 0)
-	  	{
-		  	//caso os rps sejam maiores que o max do master node spawn um novo node
-		  	if(requestsPerSecond > requestsLimitToSpawn)
+	if(autoMode)
+	{
+		// query para receber os valores de rps
+		influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
+			requestsPerSecond = results[0].requestsPerSecond;
+		  	console.log("rps: "+results[0].requestsPerSecond);
+		  	if(requestsPerSecond > 0)
 		  	{
-		  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
-		  		nginx_nodes.getTimeOutDel(function(timeOutDel)
-		  		{
-		  			if(timeOutDel.length > 0)
-		  			{
-		  				console.log("clear TIMEOUT");
-		  				nginx_nodes.clearTimeOutDel();
-		  			}
-		  			else
-		  			{
-		  				nginx_nodes.createNewNginxNode(absolutePath,function(){
-				  			console.log("arrancou um node");
-				  		})
-		  			}
-		  		})
-		  		console.log("req: limit "+requestsLimitToSpawn);
+			  	//caso os rps sejam maiores que o max do master node spawn um novo node
+			  	if(requestsPerSecond > requestsLimitToSpawn)
+			  	{
+			  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
+			  		nginx_nodes.getTimeOutDel(function(timeOutDel)
+			  		{
+			  			if(timeOutDel.length > 0)
+			  			{
+			  				console.log("clear TIMEOUT");
+			  				nginx_nodes.clearTimeOutDel();
+			  			}
+			  			else
+			  			{
+			  				nginx_nodes.createNewNginxNode(absolutePath,function(){
+					  			console.log("arrancou um node");
+					  		})
+			  			}
+			  		})
+			  		console.log("req: limit "+requestsLimitToSpawn);
+			  	}
+			  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
+			  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
+			  	{
+			  		//apenas apagar ate ao limite minimo
+			  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
+			  		{
+			  			console.log("adicionou node a timeout");
+			  			// diminuir os limite para o level abaixo
+			  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+			  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+			  				console.log(msg);
+			  			})
+			  		}	
+			  	}
 		  	}
-		  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
-		  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
-		  	{
-		  		//apenas apagar ate ao limite minimo
-		  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
-		  		{
-		  			console.log("adicionou node a timeout");
-		  			// diminuir os limite para o level abaixo
-		  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
-		  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
-		  				console.log(msg);
-		  			})
-		  		}	
-		  	}
-	  	}
-	})
+		})
+	}
 }
 
 function getActiveConnections()
 {
-	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
-		activeConnections = results[0].activeConnections;
-	  	console.log("conn "+results[0].activeConnections);
-	  	if(activeConnections > connectionsLimitToSpawn)
-	  	{
-	  		connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
-	  		nginxlb_nodes.getTimeOutDel(function(timeOutDel)
-	  		{
-	  			if(timeOutDel.length > 0)
-	  			{
-	  				console.log("clear TIMEOUT");
-	  				nginxlb_nodes.clearTimeOutDel();
-	  			}
-	  			else
-	  			{
-	  				nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
-		  				console.log("arrancou um node lb");
+	if(autoMode)
+	{
+		influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
+			activeConnections = results[0].activeConnections;
+		  	console.log("conn "+results[0].activeConnections);
+		  	if(activeConnections > connectionsLimitToSpawn)
+		  	{
+		  		connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
+		  		nginxlb_nodes.getTimeOutDel(function(timeOutDel)
+		  		{
+		  			if(timeOutDel.length > 0)
+		  			{
+		  				console.log("clear TIMEOUT");
+		  				nginxlb_nodes.clearTimeOutDel();
+		  			}
+		  			else
+		  			{
+		  				nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
+			  				console.log("arrancou um node lb");
+			  			})
+		  			}
+		  		})
+		  		console.log("conn: limit "+connectionsLimitToSpawn);
+		  	}
+		  	else if(activeConnections < connectionsLimitToSpawn - connectionsLimitToSpawnPropagation)
+		  	{
+		  		if(connectionsLimitToSpawn > connectionsLimitToSpawnPropagation)
+		  		{
+		  			console.log("eliminar coiso");
+		  			connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
+		  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
+		  				console.log(msg);
 		  			})
-	  			}
-	  		})
-	  		console.log("conn: limit "+connectionsLimitToSpawn);
-	  	}
-	  	else if(activeConnections < connectionsLimitToSpawn - connectionsLimitToSpawnPropagation)
-	  	{
-	  		if(connectionsLimitToSpawn > connectionsLimitToSpawnPropagation)
-	  		{
-	  			console.log("eliminar coiso");
-	  			connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
-	  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
-	  				console.log(msg);
-	  			})
-	  		}	
-	  	}
-	})
+		  		}	
+		  	}
+		})
+	}
 }
 			
 
@@ -201,6 +208,11 @@ io.on('connection', function(socket){
 	socket.on('getOnlineNginxNodeContainers',function(){
 		nginx_nodes.getOnlineNginxNodeContainers(function(onlineNginxNodeContainers){
 			socket.emit('getOnlineNginxNodeContainers',onlineNginxNodeContainers);
+		})
+	})
+	socket.on('getOnlineNginxLbNodeContainers',function(){
+		nginx_nodes.getOnlineNginxLbNodeContainers(function(onlineNginxLbNodeContainers){
+			socket.emit('getOnlineNginxLbNodeContainers',onlineNginxLbNodeContainers);
 		})
 	})
 	socket.on('getRequestsPerSecond',function(){
@@ -277,6 +289,12 @@ io.on('connection', function(socket){
 		for (let i = 0; i < limit; i++) {
 			console.log("parou "+limit+" mysql slaves");
 		}
+	})
+	socket.on('getMode',function(){
+		socket.emit('getMode',autoMode);
+	})
+	socket.on('setMode',function(e){
+		autoMode = e;
 	})
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
