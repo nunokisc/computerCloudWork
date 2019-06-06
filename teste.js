@@ -24,10 +24,10 @@ const influx = new Influx.InfluxDB({
 })
 var requestsPerSecond = 0;
 var activeConnections = 0;
-var requestsLimitToSpawn = 10;
-var requestsLimitToSpawnPropagation = 10;
-var connectionsLimitToSpawn = 25;
-var connectionsLimitToSpawnPropagation = 25;
+var requestsLimitToSpawn = 50;
+var requestsLimitToSpawnPropagation = 50;
+var connectionsLimitToSpawn = 200;
+var connectionsLimitToSpawnPropagation = 200;
 //add array to reserved ips to loadbalancers to usedIps
 containers.setReservedIps(reservedIps);
 containers.setRootContainers(rootContainers);
@@ -56,24 +56,15 @@ containers.docker.listContainers(function (err, dockerContainers)
 				else if(containerName.includes('cwc-nginxlb-') && !containerName.includes(rootContainers.nginxlb.name))
 				{
 					nginxlb_nodes.setOnlineNginxLbNodeContainers({name:containerName});
+					connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
 				}
 			}
 
 			// verifica se o container é o influxdb
 			if(containerName == rootContainers.influxdb.name)
 			{
-				//setInterval(getActiveConnections,1000);
+				setInterval(getActiveConnections,1000);
 				setInterval(getRequestsPerSecond,1100);
-				setTimeout(()=>{
-					nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
-		  				console.log("arrancou um node lb");
-		  			})
-				},3000)
-				setTimeout(()=>{
-		  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
-		  				console.log(msg);
-		  			})
-	  			},4000)
 			}
 		});
 	}
@@ -109,36 +100,77 @@ function getRequestsPerSecond()
 	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
 		requestsPerSecond = results[0].requestsPerSecond;
 	  	console.log("rps: "+results[0].requestsPerSecond);
-	  	//caso os rps sejam maiores que o max do master node spawn um novo node
-	  	if(requestsPerSecond > requestsLimitToSpawn)
+	  	if(requestsPerSecond > 0)
 	  	{
-	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
-	  		nginx_nodes.getTimeOutDel(function(timeOutDel)
+		  	//caso os rps sejam maiores que o max do master node spawn um novo node
+		  	if(requestsPerSecond > requestsLimitToSpawn)
+		  	{
+		  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
+		  		nginx_nodes.getTimeOutDel(function(timeOutDel)
+		  		{
+		  			if(timeOutDel.length > 0)
+		  			{
+		  				console.log("clear TIMEOUT");
+		  				nginx_nodes.clearTimeOutDel();
+		  			}
+		  			else
+		  			{
+		  				nginx_nodes.createNewNginxNode(absolutePath,function(){
+				  			console.log("arrancou um node");
+				  		})
+		  			}
+		  		})
+		  		console.log("req: limit "+requestsLimitToSpawn);
+		  	}
+		  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
+		  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
+		  	{
+		  		//apenas apagar ate ao limite minimo
+		  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
+		  		{
+		  			console.log("adicionou node a timeout");
+		  			// diminuir os limite para o level abaixo
+		  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+		  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+		  				console.log(msg);
+		  			})
+		  		}	
+		  	}
+	  	}
+	})
+}
+
+function getActiveConnections()
+{
+	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
+		activeConnections = results[0].activeConnections;
+	  	console.log("conn "+results[0].activeConnections);
+	  	if(activeConnections > connectionsLimitToSpawn)
+	  	{
+	  		connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
+	  		nginxlb_nodes.getTimeOutDel(function(timeOutDel)
 	  		{
 	  			if(timeOutDel.length > 0)
 	  			{
 	  				console.log("clear TIMEOUT");
-	  				nginx_nodes.clearTimeOutDel();
+	  				nginxlb_nodes.clearTimeOutDel();
 	  			}
 	  			else
 	  			{
-	  				nginx_nodes.createNewNginxNode(absolutePath,function(){
-			  			console.log("arrancou um node");
-			  		})
+	  				nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
+		  				console.log("arrancou um node lb");
+		  			})
 	  			}
 	  		})
-	  		console.log("req: limit "+requestsLimitToSpawn);
+	  		console.log("conn: limit "+connectionsLimitToSpawn);
 	  	}
-	  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
-	  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
+	  	else if(activeConnections < connectionsLimitToSpawn - connectionsLimitToSpawnPropagation)
 	  	{
-	  		//apenas apagar ate ao limite minimo
-	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
+	  		if(connectionsLimitToSpawn > connectionsLimitToSpawnPropagation)
 	  		{
-	  			console.log("adicionou node a timeout");
-	  			// diminuir os limite para o level abaixo
-	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
-	  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+	  			console.log("eliminar coiso");
+	  			connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
+	  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
 	  				console.log(msg);
 	  			})
 	  		}	
