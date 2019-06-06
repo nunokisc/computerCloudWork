@@ -1,5 +1,6 @@
 var containers = require('./lib/containers.js');
 var nginx_nodes = require('./lib/nginx_nodes.js');
+var nginxlb_nodes = require('./lib/nginxlb_nodes.js');
 var express = require('express');
 var app = express();
 var http = require('http').createServer(app);
@@ -23,21 +24,23 @@ const influx = new Influx.InfluxDB({
 })
 var requestsPerSecond = 0;
 var activeConnections = 0;
-var requestsLimitToSpawn = 25;
-var requestsLimitToSpawnPropagation = 25;
-var connectionsLimitToSpawn = 25;
-var connectionsLimitToSpawnPropagation = 25;
+var requestsLimitToSpawn = 50;
+var requestsLimitToSpawnPropagation = 50;
+var connectionsLimitToSpawn = 200;
+var connectionsLimitToSpawnPropagation = 200;
 //add array to reserved ips to loadbalancers to usedIps
 containers.setReservedIps(reservedIps);
 containers.setRootContainers(rootContainers);
 
-containers.docker.listContainers(function (err, dockerContainers) {
+containers.docker.listContainers(function (err, dockerContainers) 
+{
 	//verificar se existem dockerContainers a correr
 	let counter = 0;
 	if(dockerContainers.length > 0)
 	{
 		//retornar o nome e ip da maquina iniciada
-		dockerContainers.forEach(function (containerInfo) {
+		dockerContainers.forEach(function (containerInfo) 
+		{
 			//console.log(containerInfo.Names[0]);
 			let containerName = containerInfo.Names[0].substring(1,containerInfo.Names[0].length);
 			// verficiar se o container é cwc
@@ -50,13 +53,18 @@ containers.docker.listContainers(function (err, dockerContainers) {
 					nginx_nodes.setOnlineNginxNodeContainers({name:containerName});
 					requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 				}
+				else if(containerName.includes('cwc-nginxlb-') && !containerName.includes(rootContainers.nginxlb.name))
+				{
+					nginxlb_nodes.setOnlineNginxLbNodeContainers({name:containerName});
+					connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
+				}
 			}
 
 			// verifica se o container é o influxdb
 			if(containerName == rootContainers.influxdb.name)
 			{
-				//setInterval(getActiveConnections,1000);
-				setInterval(getRequestsPerSecond,1000);
+				setInterval(getActiveConnections,1000);
+				setInterval(getRequestsPerSecond,1100);
 			}
 		});
 	}
@@ -92,29 +100,79 @@ function getRequestsPerSecond()
 	influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
 		requestsPerSecond = results[0].requestsPerSecond;
 	  	console.log("rps: "+results[0].requestsPerSecond);
-	  	//caso os rps sejam maiores que o max do master node spawn um novo node
-	  	if(requestsPerSecond > requestsLimitToSpawn)
+	  	if(requestsPerSecond > 0)
 	  	{
-	  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
-	  		nginx_nodes.createNewNginxNode(absolutePath,function(){
-	  			console.log("arrancou um node");
-	  		})
-	  		console.log("req: limit "+requestsLimitToSpawn);
+		  	//caso os rps sejam maiores que o max do master node spawn um novo node
+		  	if(requestsPerSecond > requestsLimitToSpawn)
+		  	{
+		  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
+		  		nginx_nodes.getTimeOutDel(function(timeOutDel)
+		  		{
+		  			if(timeOutDel.length > 0)
+		  			{
+		  				console.log("clear TIMEOUT");
+		  				nginx_nodes.clearTimeOutDel();
+		  			}
+		  			else
+		  			{
+		  				nginx_nodes.createNewNginxNode(absolutePath,function(){
+				  			console.log("arrancou um node");
+				  		})
+		  			}
+		  		})
+		  		console.log("req: limit "+requestsLimitToSpawn);
+		  	}
+		  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
+		  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
+		  	{
+		  		//apenas apagar ate ao limite minimo
+		  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
+		  		{
+		  			console.log("adicionou node a timeout");
+		  			// diminuir os limite para o level abaixo
+		  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+		  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+		  				console.log(msg);
+		  			})
+		  		}	
+		  	}
 	  	}
-	  	// caso os rps baixem do valor maximo de pois do spawn de um novo node remove esse node
-	  	else if(requestsPerSecond < requestsLimitToSpawn - requestsLimitToSpawnPropagation)
+	})
+}
+
+function getActiveConnections()
+{
+	influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
+		activeConnections = results[0].activeConnections;
+	  	console.log("conn "+results[0].activeConnections);
+	  	if(activeConnections > connectionsLimitToSpawn)
 	  	{
-	  		//apenas apagar ate ao limite minimo
-	  		if(requestsLimitToSpawn > requestsLimitToSpawnPropagation)
+	  		connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
+	  		nginxlb_nodes.getTimeOutDel(function(timeOutDel)
+	  		{
+	  			if(timeOutDel.length > 0)
+	  			{
+	  				console.log("clear TIMEOUT");
+	  				nginxlb_nodes.clearTimeOutDel();
+	  			}
+	  			else
+	  			{
+	  				nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
+		  				console.log("arrancou um node lb");
+		  			})
+	  			}
+	  		})
+	  		console.log("conn: limit "+connectionsLimitToSpawn);
+	  	}
+	  	else if(activeConnections < connectionsLimitToSpawn - connectionsLimitToSpawnPropagation)
+	  	{
+	  		if(connectionsLimitToSpawn > connectionsLimitToSpawnPropagation)
 	  		{
 	  			console.log("eliminar coiso");
-	  			// diminuir os limite para o level abaixo
-	  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
-	  			setTimeout(()=>{
-	  				nginx_nodes.deleteNewNginxNode(absolutePath,function(){
-			  			console.log("Apagou um node");
-			  		})
-	  			},10000);
+	  			connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
+	  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
+	  				console.log(msg);
+	  			})
 	  		}	
 	  	}
 	})

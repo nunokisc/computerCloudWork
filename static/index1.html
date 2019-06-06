@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <title>Gestão de Containers</title>
+
+  <!-- Bootstrap core CSS -->
+  <link href="vendor/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+  <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+  <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+
+  <!-- Custom styles for this template -->
+  <link href="css/simple-sidebar.css" rel="stylesheet">
+  <link href="css/sb-admin-2.min.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+  <div class="d-flex" id="wrapper">
+
+    <!-- Sidebar -->
+    <div class="bg-light border-right" id="sidebar-wrapper">
+      <div class="sidebar-heading">Menu</div>
+      <div class="list-group list-group-flush">
+        <a href="index.html" class="list-group-item list-group-item-action bg-light">Dashboard</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light">Gestão Containers</a>
+      </div>
+    </div>
+    <!-- /#sidebar-wrapper -->
+
+    <!-- Page Content -->
+    <div id="page-content-wrapper">
+
+      <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom">
+        <button class="btn btn-primary" id="menu-toggle">Toggle Menu</button>
+
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav ml-auto mt-2 mt-lg-0">
+            <li class="nav-item active">
+              <a class="nav-link" href="#">Home <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="#">Link</a>
+            </li>
+            <li class="nav-item dropdown">
+              <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                Dropdown
+              </a>
+              <div class="dropdown-menu dropdown-menu-right" aria-labelledby="navbarDropdown">
+                <a class="dropdown-item" href="#">Action</a>
+                <a class="dropdown-item" href="#">Another action</a>
+                <div class="dropdown-divider"></div>
+                <a class="dropdown-item" href="#">Something else here</a>
+              </div>
+            </li>
+          </ul>
+        </div>
+      </nav>
+    <div>
+    <div class="container-fluid">
+      <h1 class="h4 mb-4 text-gray-800"></h1>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="card shadow mb-4">
+              <div class="card-header py-6">
+                <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+              </div>
+              <div class="card-body">
+                <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
+                <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a>
+              </div>
+          </div>
+        </div> 
+        <div class="col-lg-6">
+          <div class="card shadow mb-4">
+              <div class="card-header py-6">
+                <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+              </div>
+              <div class="card-body">
+                <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
+                <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a>
+              </div>
+          </div>
+        </div>
+      <!-- /#row -->
+      </div>
+      <div class="row">
+          <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-6">
+                  <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+                </div>
+                <div class="card-body">
+                  <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
+                  <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a>
+                </div>
+            </div>
+          </div> 
+          <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-6">
+                  <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+                </div>
+                <div class="card-body">
+                  <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
+                  <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a>
+                </div>
+            </div>
+          </div>
+        <!-- /#row -->
+        </div>
+      <!-- /#fluid-container -->
+      </div>
+  <!-- /#page-content-wrapper -->
+</div>
+<!-- /#wrapper -->
+
+<!-- Bootstrap core JavaScript -->
+<script src="vendor/jquery/jquery.min.js"></script>
+<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+<!-- Menu Toggle Script -->
+<script>
+  $("#menu-toggle").click(function(e) {
+    e.preventDefault();
+    $("#wrapper").toggleClass("toggled");
+  });
+</script>
+
+<script src="/socket.io/socket.io.js"></script>
+  <script>
+    var socket = io();
+    $("#startCont").click(function(){
+      socket.emit('getUsedIps','');
+    });
+    socket.on('getUsedIps', function(msg) {
+    console.log(msg);
+    });
+    $("#stopCont").click(function(){
+      socket.emit('getOnlineContainers','');
+    });
+    socket.on('getOnlineContainers', function(msg) {
+    console.log(msg);
+    });
+/*  socket.emit('getOnlineContainers','');
+ socket.emit('getOnlineNginxNodeContainers','');
+ socket.emit('getUsedIps','');
+
+ socket.on('getOnlineContainers', function(msg) {
+   console.log(msg);
+
+   $('#thetable tr').not(':first').not(':last').remove();
+   var html = '';
+   for(var i = 0; i < msg.length; i++)
+    html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
+  '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
+  $('#thetable tr').first().after(html);
+
+})
+
+ socket.on('getUsedIps',function(msg){
+  console.log(msg);
+
+    $('#thetable2 tr').not(':first').not(':last').remove();
+   var html = '';
+   for(var i = 0; i < msg.length; i++)
+    html += '<tr style="border:1px solid black"><td>' + msg[i] + '</td></tr>';
+  $('#thetable2 tr').first().after(html);
+})
+ socket.on('getOnlineNginxNodeContainers',function(msg){
+  console.log(msg);
+
+})
+
+ $('#poke').click(function () {
+   socket.emit('getOnlineContainers','');
+ }) */
+</script>
+
+
+</body>
+
+</html>
