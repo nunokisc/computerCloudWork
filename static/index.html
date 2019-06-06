@@ -140,9 +140,20 @@
 
    $('#thetable tr').not(':first').not(':last').remove();
    var html = '';
-   for(var i = 0; i < msg.length; i++)
-    html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
-  '</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> <a href="#" onclick="showGrafanaIframe(\''+msg[i].hostname+'\');" >' + msg[i].hostname + '</a></td></tr>';
+   for(var i = 0; i < msg.length; i++){
+   	if(msg[i].name.substring(0,9)=='cwc-nginx'){
+   		if(msg[i].name=='cwc-nginxlb-master')
+   			showGrafanaIframe(msg[i].hostname);
+   		html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
+   		'</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> <a href="#" onclick="showGrafanaIframe(\''+msg[i].hostname+'\');" >' + msg[i].hostname + '</a></td></tr>';
+   	}
+   	else {
+   		html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> ' + msg[i].hostname + '</td></tr>';
+
+   	}
+   	
+   }
+    
   $('#thetable tr').first().after(html);
 
 })
