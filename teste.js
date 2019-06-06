@@ -240,6 +240,44 @@ io.on('connection', function(socket){
 	socket.on('getRootContainers',function(){
 		socket.emit('getRootContainers',rootContainers);
 	})
+	socket.on('startNginxContainer',function(limit){
+		for (let i = 0; i < limit; i++) {
+			nginx_nodes.createNewNginxNode(absolutePath,function(){
+	  			console.log("arrancou um node");
+	  		})
+		}
+	})
+	socket.on('stopNginxContainer',function(limit){
+		for (let i = 0; i < limit; i++) {
+			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+  				console.log(msg);
+  			})
+		}
+	})
+	socket.on('startNginxLbContainer',function(limit){
+		for (let i = 0; i < limit; i++) {
+			nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
+  				console.log("arrancou um node lb");
+  			})
+		}
+	})
+	socket.on('stopNginxLbContainer',function(limit){
+		for (let i = 0; i < limit; i++) {
+			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
+  				console.log(msg);
+  			})
+		}
+	})
+	socket.on('startMysqlContainer',function(limit){
+		for (let i = 0; i < limit; i++) {
+			console.log("arrancou "+limit+" mysql slaves");
+		}
+	})
+	socket.on('stopMysqlLbContainer',function(limit){
+		for (let i = 0; i < limit; i++) {
+			console.log("parou "+limit+" mysql slaves");
+		}
+	})
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
 	});
