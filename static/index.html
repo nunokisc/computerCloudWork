@@ -68,17 +68,10 @@
       <div class="container-fluid">
         <h1 class="mt-12">Metricas</h1>
         <div style="margin-top:20px;" class="row" id="row1">
-          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=1&from=now-1h&to=now"  frameborder="0"></iframe>
-          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=2&from=now-1h&to=now"  frameborder="0"></iframe>
-          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=3&from=now-1h&to=now"  frameborder="0"></iframe>
-          <iframe class="col-3" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=4&from=now-1h&to=now"  frameborder="0"></iframe>
         </div>
         <div style="margin-top:20px;" class="row" id="row2">
-          <iframe class="col-6" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=5&from=now-1h&to=now" frameborder="0"></iframe>
-          <iframe class="col-6" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=7&from=now-1h&to=now" frameborder="0"></iframe>
         </div>
         <div style="margin-top:20px;" class="row" id="row3">
-          <iframe class="col-12" src="http://localhost:3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId=8&from=now-1h&to=now" frameborder="0"></iframe>
         </div>
 
 
@@ -94,12 +87,50 @@
             </table> 
           </div>
           <div class="col-6">
+            <h1 class="mt-6">Online Nginx Node</h1>
+            <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable3'>
+              <tr style="border:1px solid black">
+                <th style="border:1px solid black">Name</th>
+                <th>Ip</th>
+              </tr>
+            </table> 
+          </div>
+          <div class="col-6">
+            <h1 class="mt-6">Online Root Containers</h1>
+            <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable4'>
+              <tr style="border:1px solid black">
+                <th style="border:1px solid black">Name</th>
+                <th>Ip</th>
+              </tr>
+            </table> 
+          </div>
+          <div class="col-6">
             <h1 class="mt-6">Ips</h1>
             <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable2'>
               <tr style="border:1px solid black">
                 <th>Ip</th>
               </tr>
             </table> 
+          </div>
+          <div class="col-6">
+          	<h1>Requests Por Segundo</h1><br>
+          	<p><span id='req'></span></p>
+          </div>
+          <div class="col-6">
+          	<h1>Requests Limit to Spawn</h1><br>
+          	<p><span id='reqSpawn'></span></p>
+          </div>
+          <div class="col-6">
+          	<h1>Req.Limit to Spawn Propagation</h1><br>
+          	<p><span id='reqSpawnProp'></span></p>
+          </div>
+          <div class="col-6">
+          	<h1>Connection Limit to Spawn</h1><br>
+          	<p><span id='conSpawn'></span></p>
+          </div>
+          <div class="col-6">
+          	<h1>Connection Limit to Spawn</h1><br>
+          	<p><span id='conSpawnProp'></span></p>
           </div>
         </div>
       </div>
@@ -129,7 +160,13 @@
 
  socket.emit('getOnlineContainers','');
  socket.emit('getOnlineNginxNodeContainers','');
+ socket.emit('getRootContainers','');
  socket.emit('getUsedIps','');
+ socket.emit('getRequestsPerSecond','');
+ socket.emit('getRequestsLimitToSpawn','');
+ socket.emit('getRequestsLimitToSpawnPropagation','');
+ socket.emit('getConnectionsLimitToSpawn','');
+ socket.emit('getConnectionsLimitToSpawnPropagation','');
 
  socket.on('getOnlineContainers', function(msg) {
    console.log(msg);
@@ -138,8 +175,8 @@
    var html = '';
    for(var i = 0; i < msg.length; i++){
    	if(msg[i].name.substring(0,9)=='cwc-nginx'){
-   		if(msg[i].name=='cwc-nginxlb-master')
-   			showGrafanaIframe(msg[i].hostname);
+   		//if(msg[i].name=='cwc-nginxlb-master')
+   			//showGrafanaIframe(msg[i].hostname);
    		html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
    		'</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> <a href="#" onclick="showGrafanaIframe(\''+msg[i].hostname+'\');" >' + msg[i].hostname + '</a></td></tr>';
    	}
@@ -163,14 +200,59 @@
     html += '<tr style="border:1px solid black"><td>' + msg[i] + '</td></tr>';
   $('#thetable2 tr').first().after(html);
 })
- socket.on('getOnlineNginxNodeContainers',function(msg){
+
+socket.on('getOnlineNginxNodeContainers',function(msg){
   console.log(msg);
 
+    $('#thetable3 tr').not(':first').not(':last').remove();
+   var html = '';
+   for(var i = 0; i < msg.length; i++)
+     html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
+  $('#thetable3 tr').first().after(html);
 })
 
- $('#poke').click(function () {
-   socket.emit('getOnlineContainers','');
- })
+socket.on('getRootContainers',function(msg){
+  console.log(msg);
+
+    $('#thetable4 tr').not(':first').not(':last').remove();
+   var html = '';
+   for(var i in msg)
+     html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
+  $('#thetable4 tr').first().after(html);
+})
+
+
+socket.on('getRequestsPerSecond',function(msg){
+  console.log(msg);
+
+    $('#req').html(msg);
+})
+
+socket.on('getRequestsLimitToSpawn',function(msg){
+  console.log(msg);
+
+    $('#reqSpawn').html(msg);
+})
+
+socket.on('getRequestsLimitToSpawnPropagation',function(msg){
+  console.log(msg);
+
+    $('#reqSpawnProp').html(msg);
+})
+
+socket.on('getConnectionsLimitToSpawn',function(msg){
+  console.log(msg);
+
+    $('#conSpawn').html(msg);
+})
+
+socket.on('getConnectionsLimitToSpawnPropagation',function(msg){
+  console.log(msg);
+
+    $('#conSpawnProp').html(msg);
+})
+
+
 
  function createIframe(host,hostname,panelId,col){
   return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
