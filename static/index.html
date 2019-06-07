@@ -24,7 +24,7 @@
 
     <!-- Sidebar -->
     <div class="bg-light border-right" id="sidebar-wrapper">
-      <div class="sidebar-heading">Start Bootstrap </div>
+      <div class="sidebar-heading">Menu</div>
       <div class="list-group list-group-flush">
           <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
           <a href="index1.html" class="list-group-item list-group-item-action bg-light">Gestão Containers</a>
@@ -66,7 +66,7 @@
       </nav>
     <div>
       <div class="container-fluid">
-        <h1 class="mt-12">Metricas</h1>
+        <h1 class="display-2 text-center">Dashboard NNT</h1>
         <div style="margin-top:20px;" class="row" id="row1">
         </div>
         <div style="margin-top:20px;" class="row" id="row2">
@@ -76,9 +76,9 @@
 
 
         <div style="margin-top:20px;" class="row">
-          <div class="col-6">
-            <h1 class="mt-6">Nodes</h1>
-            <table style="width:200; border:2px solid black; border-collapse:collapse;" id='thetable'>
+          <div class="col-3">
+            <h2 class="mt-6">Nodes</h2>
+            <table class="table table-sm table-dark" id='thetable'>
               <tr style="border:1px solid black">
                 <th style="border:1px solid black">Name</th>
                 <th>Ip</th>
@@ -86,52 +86,56 @@
               </tr>
             </table> 
           </div>
-          <div class="col-6">
-            <h1 class="mt-6">Online Nginx Node</h1>
-            <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable3'>
+          <div class="col-3">
+            <h2 class="mt-6">Online Nginx Node</h2>
+            <table class="table table-sm table-dark" id='thetable3'>
               <tr style="border:1px solid black">
                 <th style="border:1px solid black">Name</th>
                 <th>Ip</th>
               </tr>
             </table> 
           </div>
-          <div class="col-6">
-            <h1 class="mt-6">Online Root Containers</h1>
-            <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable4'>
+          <div class="col-3">
+            <h2 class="mt-6">Online Root Containers</h2>
+            <table class="table table-sm table-dark" id='thetable4'>
               <tr style="border:1px solid black">
                 <th style="border:1px solid black">Name</th>
                 <th>Ip</th>
               </tr>
             </table> 
           </div>
-          <div class="col-6">
-            <h1 class="mt-6">Ips</h1>
-            <table style="width:200; border:2px solid black; border-collapse:collapse" id='thetable2'>
+          <div class="col-3">
+            <h2 class="mt-6">Ips</h2>
+            <table class="table table-sm table-dark" id='thetable2'>
               <tr style="border:1px solid black">
                 <th>Ip</th>
               </tr>
             </table> 
           </div>
-          <div class="col-6">
-          	<h1>Requests Por Segundo</h1><br>
-          	<p><span id='req'></span></p>
+          <div class="col-3">
+          	<h2>Requests p/Second</h2>
+          	<p class="h3 text-white bg-dark text-center" id='req'></p><br>
           </div>
-          <div class="col-6">
-          	<h1>Requests Limit to Spawn</h1><br>
-          	<p><span id='reqSpawn'></span></p>
+          <div class="col-3">
+            <h2>Active Connections</h2>
+            <p class="h3 text-white bg-dark text-center" id='actCon'></p><br>
           </div>
-          <div class="col-6">
-          	<h1>Req.Limit to Spawn Propagation</h1><br>
-          	<p><span id='reqSpawnProp'></span></p>
+          <div class="col-3">
+          	<h2>Req. Limit to Spawn</h2>
+          	<p class="h3 text-white bg-dark text-center" id='reqSpawn'></p><br>
           </div>
-          <div class="col-6">
-          	<h1>Connection Limit to Spawn</h1><br>
-          	<p><span id='conSpawn'></span></p>
+          <div class="col-3">
+          	<h2>Req.Limit to Spawn Propagation</h2>
+          	<p class="h3 text-white bg-dark text-center" id='reqSpawnProp'></p><br>
           </div>
-          <div class="col-6">
-          	<h1>Connection Limit to Spawn</h1><br>
-          	<p><span id='conSpawnProp'></span></p>
+          <div class="col-3">
+          	<h2>Connection Limit to Spawn</h2>
+          	<p class="h3 text-white bg-dark text-center" id='conSpawn'></p><br>
           </div>
+          <div class="col-3">
+          	<h2>Con. Limit Spawn Propagation</h2>
+          	<p class="h3 text-white bg-dark text-center" id='conSpawnProp'></p><br>
+          </div>        
         </div>
       </div>
 
@@ -167,6 +171,7 @@
  socket.emit('getRequestsLimitToSpawnPropagation','');
  socket.emit('getConnectionsLimitToSpawn','');
  socket.emit('getConnectionsLimitToSpawnPropagation','');
+ socket.emit('getActiveConnections','');
 
  socket.on('getOnlineContainers', function(msg) {
    console.log(msg);
@@ -250,6 +255,12 @@ socket.on('getConnectionsLimitToSpawnPropagation',function(msg){
   console.log(msg);
 
     $('#conSpawnProp').html(msg);
+})
+
+socket.on('getActiveConnections',function(msg){
+  console.log(msg);
+
+    $('#actCon').html(msg);
 })
 
 
