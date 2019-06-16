@@ -24,10 +24,10 @@ Este projecto consistem em escalar automaticamente em Docker um site em Wordpres
  - [x] Iniciar container Mysql - Nginx
  - [x] Iniciar container PHP - php-fpm
  - [x] Iniciar container InfluxDB
- - [x] Iniciar container Telegraf
  - [x] Criar containers Nodes - Nginx
  - [x] Configurar novos containers Nodes - Nginx no LoadBalancer
  - [x] Adicionar containers HTTP e PHP consoante a carga até um maximo de x por LoadBalancer
  - [x] Eliminar containers HTTP e PHP quando a carga diminui
- - [ ] Adicionar containers LoadBalancer consoante a carga
+ - [x] Adicionar containers LoadBalancer consoante a carga
+ - [x] Eliminar containers LoadBalancer consoante a carga
  
