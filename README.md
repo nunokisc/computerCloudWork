@@ -6,7 +6,7 @@ Este projecto consistem em escalar automaticamente em Docker um site em Wordpres
 
     docker pull kisc/nginx-telegraf
     docker pull kisc/php-fpm-kisc
-    docker pull mariadb
+    docker pull percona:5.6
     docker pull influxdb
     docker pull tiagosantana/grafana
     docker network create --driver=bridge --subnet=172.18.0.0/16 br0
