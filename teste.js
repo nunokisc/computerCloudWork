@@ -74,7 +74,7 @@ containers.docker.listContainers(function (err, dockerContainers)
 	{
 		// iniciar maquinas root
 		console.log("No containers running");
-		containers.startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/default.conf:/etc/nginx/conf.d/default.conf',absolutePath+'/http/conf.d/0-default.conf:/etc/nginx/conf.d/0-default.conf',absolutePath+'/telegraf:/etc/telegraf'],rootContainers.nginx.ip, function (data, initialStart){
+		containers.startContainer('nginx', rootContainers.nginx.name, [absolutePath+'/html:/var/www/html',absolutePath+'/http/conf.d/default.conf:/etc/nginx/conf.d/default.conf',absolutePath+'/http/conf.d/0-default.conf:/etc/nginx/conf.d/0-default.conf',absolutePath+'/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf'],rootContainers.nginx.ip, function (data, initialStart){
 			containers.getContainerDataRunning(data.Config.Hostname,initialStart);
 		});
 		containers.startContainer('php-fpm', rootContainers.php.name, [absolutePath+'/html:/var/www/html'],rootContainers.php.ip, function (data, initialStart){
@@ -83,7 +83,7 @@ containers.docker.listContainers(function (err, dockerContainers)
 		containers.startContainer('mysql-server', rootContainers.mysql.name, [absolutePath+'/db:/docker-entrypoint-initdb.d/'],rootContainers.mysql.ip, function (data, initialStart){
 			containers.getContainerDataRunning(data.Config.Hostname,initialStart);
 		});
-		containers.startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d',absolutePath+'/telegraf:/etc/telegraf'],rootContainers.nginxlb.ip, function (data, initialStart){
+		containers.startContainer('nginx', rootContainers.nginxlb.name, [absolutePath+'/nginx/nginx.conf:/etc/nginx/nginx.conf',absolutePath+'/loadbalancer/conf.d:/etc/nginx/conf.d',absolutePath+'/telegraf/telegraf_cache.conf:/etc/telegraf/telegraf.conf'],rootContainers.nginxlb.ip, function (data, initialStart){
 			containers.getContainerDataRunning(data.Config.Hostname,initialStart);
 		});
 		containers.startContainer('influxdb', rootContainers.influxdb.name, [],rootContainers.influxdb.ip, function (data, initialStart){
