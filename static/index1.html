@@ -19,6 +19,8 @@
   <link href="css/simple-sidebar.css" rel="stylesheet">
   <link href="css/sb-admin-2.min.css" rel="stylesheet">
 
+  
+
 </head>
 
 <body>
@@ -72,20 +74,32 @@
       <h1 class="h4 mb-4 text-gray-800"></h1>
       <div class="row">
         <div class="col-lg-6">
+          <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+        </div>
+      </div>
+      <h1 class="h4 mb-4 text-gray-800"></h1>
+      <div class="row">
+        <div class="col-lg-6">
           <div class="card shadow mb-4">
               <div class="card-header py-6">
                 <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
               </div>
               <div class="card-body">
-                <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
-                <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a>
+                <button id="modalActivate" class="btn btn-block btn-success" type="button" onclick="btnFunc({title:'Adicionar nginx container',labelemit:'startNginxContainer',text:'Número containers:'})">
+                    Adicionar container
+                </button>
+                <button id="modalActivate" class="btn btn-block btn-danger" type="button" onclick="btnFunc({title:'Remover nginx container',labelemit:'stopNginxContainer',text:'Número containers:'})">
+                    Remover container
+                </button>
+                <!-- <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a> -->
+                <!-- <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a> -->
               </div>
           </div>
         </div> 
         <div class="col-lg-6">
           <div class="card shadow mb-4">
               <div class="card-header py-6">
-                <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+                <h6 class="m-0 font-weight-bold text-primary">Gestão Load Balancers</h6>
               </div>
               <div class="card-body">
                 <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
@@ -99,7 +113,7 @@
           <div class="col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-6">
-                  <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+                  <h6 class="m-0 font-weight-bold text-primary">Gestão Mysql</h6>
                 </div>
                 <div class="card-body">
                   <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
@@ -110,7 +124,7 @@
           <div class="col-lg-6">
             <div class="card shadow mb-4">
                 <div class="card-header py-6">
-                  <h6 class="m-0 font-weight-bold text-primary">Gestão Containers</h6>
+                  <h6 class="m-0 font-weight-bold text-primary">Gestão Autoscalling</h6>
                 </div>
                 <div class="card-body">
                   <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
@@ -128,6 +142,7 @@
 
 <!-- Bootstrap core JavaScript -->
 <script src="vendor/jquery/jquery.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/eventemitter3/2.0.2/index.min.js"></script>
 <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
 <!-- Menu Toggle Script -->
@@ -141,6 +156,34 @@
 <script src="/socket.io/socket.io.js"></script>
   <script>
     var socket = io();
+    var argEnt;
+
+    function btnFunc(e)
+    {
+      console.log(e)
+      argEnt = e.labelemit;
+      $("#numCont").val("")
+      $("#exampleModalPreviewLabel").html(e.title);
+      $('#textInput').html(e.text);
+      $('#exampleModalPreview').modal('show');
+     }
+
+    function submit()
+    {
+      console.log($("#numCont").val(),argEnt);
+      socket.emit(argEnt,$("#numCont").val());
+      socket.on(argEnt, function(msg) {
+        console.log(msg);
+        if (msg == 'sucesso'){
+          $('#exampleModalPreview').modal('hide');
+          alert(msg);
+      }
+        else{
+          alert('correu mal');
+        }
+      });
+    }
+
     $("#startCont").click(function(){
       socket.emit('getUsedIps','');
     });
@@ -153,42 +196,34 @@
     socket.on('getOnlineContainers', function(msg) {
     console.log(msg);
     });
-/*  socket.emit('getOnlineContainers','');
- socket.emit('getOnlineNginxNodeContainers','');
- socket.emit('getUsedIps','');
-
- socket.on('getOnlineContainers', function(msg) {
-   console.log(msg);
-
-   $('#thetable tr').not(':first').not(':last').remove();
-   var html = '';
-   for(var i = 0; i < msg.length; i++)
-    html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
-  '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
-  $('#thetable tr').first().after(html);
-
-})
-
- socket.on('getUsedIps',function(msg){
-  console.log(msg);
-
-    $('#thetable2 tr').not(':first').not(':last').remove();
-   var html = '';
-   for(var i = 0; i < msg.length; i++)
-    html += '<tr style="border:1px solid black"><td>' + msg[i] + '</td></tr>';
-  $('#thetable2 tr').first().after(html);
-})
- socket.on('getOnlineNginxNodeContainers',function(msg){
-  console.log(msg);
-
-})
-
- $('#poke').click(function () {
-   socket.emit('getOnlineContainers','');
- }) */
+   
+    function lol(arg,arg1){
+      console.log(arg);
+      socket.emit(arg,arg1);
+    }
 </script>
-
-
 </body>
-
+<!-- Modal -->
+  <div class="modal fade right" id="exampleModalPreview" tabindex="-1" role="dialog" aria-labelledby="exampleModalPreviewLabel" aria-hidden="true"> 
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalPreviewLabel"></h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          <form id="form">
+            <label id="textInput"></label>
+            <input id="numCont" type="number">
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" onclick="submit()" class="btn btn-primary">Enviar</button>
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </html>

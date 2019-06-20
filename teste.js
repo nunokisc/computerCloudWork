@@ -258,6 +258,7 @@ io.on('connection', function(socket){
 	  			console.log("arrancou um node");
 	  		})
 		}
+		socket.emit('startNginxContainer','sucesso');
 	})
 	socket.on('stopNginxContainer',function(limit){
 		for (let i = 0; i < limit; i++) {
@@ -265,6 +266,7 @@ io.on('connection', function(socket){
   				console.log(msg);
   			})
 		}
+		socket.emit('stopNginxContainer','sucesso');
 	})
 	socket.on('startNginxLbContainer',function(limit){
 		for (let i = 0; i < limit; i++) {
