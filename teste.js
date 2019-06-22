@@ -274,6 +274,7 @@ io.on('connection', function(socket){
   				console.log("arrancou um node lb");
   			})
 		}
+		socket.emit('startNginxLbContainer','sucesso');
 	})
 	socket.on('stopNginxLbContainer',function(limit){
 		for (let i = 0; i < limit; i++) {
@@ -281,16 +282,19 @@ io.on('connection', function(socket){
   				console.log(msg);
   			})
 		}
+		socket.emit('stopNginxLbContainer','sucesso');
 	})
 	socket.on('startMysqlContainer',function(limit){
 		for (let i = 0; i < limit; i++) {
 			console.log("arrancou "+limit+" mysql slaves");
 		}
+		socket.emit('startMysqlContainer','sucesso');
 	})
 	socket.on('stopMysqlLbContainer',function(limit){
 		for (let i = 0; i < limit; i++) {
 			console.log("parou "+limit+" mysql slaves");
 		}
+		socket.emit('stopMysqlLbContainer','sucesso');
 	})
 	socket.on('getMode',function(){
 		socket.emit('getMode',autoMode);
