@@ -261,12 +261,21 @@ io.on('connection', function(socket){
 		socket.emit('startNginxContainer','sucesso');
 	})
 	socket.on('stopNginxContainer',function(limit){
-		for (let i = 0; i < limit; i++) {
-			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
-  				console.log(msg);
-  			})
-		}
-		socket.emit('stopNginxContainer','sucesso');
+		nginx_nodes.getOnlineNginxNodeContainers(function(onlinelcontainers){
+			if(limit <= onlinelcontainers.length)
+			{
+				for (let i = 0; i < limit; i++) {
+					nginxlb_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+		  				console.log("arrancou um node lb");
+		  			})
+				}
+				socket.emit('stopNginxContainer','sucesso');
+			}
+			else
+			{
+				socket.emit('stopNginxContainer','montante de containers invalido');
+			}
+		})
 	})
 	socket.on('startNginxLbContainer',function(limit){
 		for (let i = 0; i < limit; i++) {
@@ -277,24 +286,21 @@ io.on('connection', function(socket){
 		socket.emit('startNginxLbContainer','sucesso');
 	})
 	socket.on('stopNginxLbContainer',function(limit){
-		for (let i = 0; i < limit; i++) {
-			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
-  				console.log(msg);
-  			})
-		}
-		socket.emit('stopNginxLbContainer','sucesso');
-	})
-	socket.on('startMysqlContainer',function(limit){
-		for (let i = 0; i < limit; i++) {
-			console.log("arrancou "+limit+" mysql slaves");
-		}
-		socket.emit('startMysqlContainer','sucesso');
-	})
-	socket.on('stopMysqlLbContainer',function(limit){
-		for (let i = 0; i < limit; i++) {
-			console.log("parou "+limit+" mysql slaves");
-		}
-		socket.emit('stopMysqlLbContainer','sucesso');
+		nginxlb_nodes.getOnlineNginxLbNodeContainers(function(onlinelcontainers){
+			if(limit <= onlinelcontainers.length)
+			{
+				for (let i = 0; i < limit; i++) {
+					nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
+		  				console.log("arrancou um node lb");
+		  			})
+				}
+				socket.emit('stopNginxLbContainer','sucesso');
+			}
+			else
+			{
+				socket.emit('stopNginxLbContainer','montante de containers invalido');
+			}
+		})
 	})
 	socket.on('getMode',function(){
 		socket.emit('getMode',autoMode);
