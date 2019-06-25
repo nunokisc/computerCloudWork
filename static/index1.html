@@ -30,10 +30,10 @@
     <!-- Sidebar -->
     <div class="bg-light border-right" id="sidebar-wrapper">
       <div class="sidebar-heading">Menu</div>
-      <div class="list-group list-group-flush">
-        <a href="index.html" class="list-group-item list-group-item-action bg-light">Dashboard</a>
-        <a href="#" class="list-group-item list-group-item-action bg-light">Gestão Containers</a>
-      </div>
+        <div class="list-group list-group-flush">
+          <a href="index.html" class="list-group-item list-group-item-action bg-light">Dashboard</a>
+          <a href="#" class="list-group-item list-group-item-action bg-light">Gestão Containers</a>
+        </div>
     </div>
     <!-- /#sidebar-wrapper -->
 
@@ -139,8 +139,14 @@
                   <h6 class="m-0 font-weight-bold text-primary">Gestão Autoscalling</h6>
                 </div>
                 <div class="card-body">
-                  <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
-                  <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a>
+                    <button id="modalActivate" class="btn btn-block btn-success" type="button" onclick="btnFunc({title:'Iniciar Autoscalling',labelemit:'setMode',func:'on'})">
+                        Autoscalling ON
+                    </button>
+                    <button id="modalActivate" class="btn btn-block btn-danger" type="button" onclick="btnFunc({title:'Parar Autoscalling',labelemit:'setMode',func:'off'})">
+                        Autoscalling OFF
+                    </button>
+                  <!-- <a href="#" id="startCont" class="btn btn-block btn-success">Arrancar Container</a>
+                  <a href="#" id="stopCont" class="btn btn-block btn-danger">Parar Container</a> -->
                 </div>
             </div>
           </div>
@@ -172,21 +178,39 @@
 
     function btnFunc(e)
     {
-      console.log(e)
-      argEnt = e.labelemit;
-      $("#numCont").val("")
-      $("#exampleModalPreviewLabel").html(e.title);
-      $('#textInput').html(e.text);
-      $('#exampleModalPreview').modal('show');
-     }
+      socket.emit('getMode','');
+      socket.on('getMode',function(msg){
+        console.log(msg);
+        if (msg && e.func=='on'){
+          alert("O autoscalling já se encontra ligado");
+        }
+        else if (msg && e.func=='off'){
+          socket.emit('setMode',false);
+        }
+        else if (!msg && e.func=='on'){
+          socket.emit('setMode',true);
+        }
+        else if (!msg && e.func=='off'){
+          alert("O autoscalling já se encontra desligado");
+        }
+        else if (msg){
+          $('#exampleModalPreview').modal('hide');
+          alert("Primeiro tem de desativar o modo automático");
+          // socket.emit('setMode',false);
+        }
+        else{
+          console.log(e)
+          argEnt = e.labelemit;
+          $("#numCont").val("")
+          $("#exampleModalPreviewLabel").html(e.title);
+          $('#textInput').html(e.text);
+          $('#exampleModalPreview').modal('show');
+        }
+	    })
+    }
 
     function submit()
     {
-      socket.emit('getMode','');
-      socket.on('getMode',function(msg){
-		   console.log(msg);
-	  })
-     
       console.log($("#numCont").val(),argEnt);
       socket.emit(argEnt,$("#numCont").val());
       socket.on(argEnt, function(msg) {
@@ -194,7 +218,7 @@
         if (msg == 'sucesso'){
           $('#exampleModalPreview').modal('hide');
           alert(msg);
-      }
+        }
         else{
           alert('correu mal');
         }
