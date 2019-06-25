@@ -24,7 +24,7 @@ const influx = new Influx.InfluxDB({
 })
 var requestsPerSecond = 0;
 var activeConnections = 0;
-var autoMode = true; 
+var autoMode = false; 
 var requestsLimitToSpawn = 50;
 var requestsLimitToSpawnPropagation = 50;
 var connectionsLimitToSpawn = 200;
@@ -183,8 +183,7 @@ function getActiveConnections()
 		  	}
 		})
 	}
-}
-			
+}			
 
 var htmlPath = path.join(absolutePath, 'static');
 app.use(express.static(htmlPath));
@@ -211,7 +210,7 @@ io.on('connection', function(socket){
 		})
 	})
 	socket.on('getOnlineNginxLbNodeContainers',function(){
-		nginx_nodes.getOnlineNginxLbNodeContainers(function(onlineNginxLbNodeContainers){
+		nginxlb_nodes.getOnlineNginxLbNodeContainers(function(onlineNginxLbNodeContainers){
 			socket.emit('getOnlineNginxLbNodeContainers',onlineNginxLbNodeContainers);
 		})
 	})
@@ -253,52 +252,58 @@ io.on('connection', function(socket){
 		socket.emit('getRootContainers',rootContainers);
 	})
 	socket.on('startNginxContainer',function(limit){
+		
 		for (let i = 0; i < limit; i++) {
+			requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 			nginx_nodes.createNewNginxNode(absolutePath,function(){
 	  			console.log("arrancou um node");
 	  		})
 		}
-		socket.emit('startNginxContainer','sucesso');
+		socket.emit('submitResult','sucesso');
 	})
 	socket.on('stopNginxContainer',function(limit){
 		nginx_nodes.getOnlineNginxNodeContainers(function(onlinelcontainers){
 			if(limit <= onlinelcontainers.length)
 			{
 				for (let i = 0; i < limit; i++) {
-					nginxlb_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
+					requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+					nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
 		  				console.log("arrancou um node lb");
 		  			})
 				}
-				socket.emit('stopNginxContainer','sucesso');
+				socket.emit('submitResult','sucesso');
 			}
 			else
 			{
-				socket.emit('stopNginxContainer','montante de containers invalido');
+				socket.emit('submitResult','montante de containers invalido');
 			}
 		})
 	})
 	socket.on('startNginxLbContainer',function(limit){
+		
 		for (let i = 0; i < limit; i++) {
+			connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
 			nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
   				console.log("arrancou um node lb");
   			})
 		}
-		socket.emit('startNginxLbContainer','sucesso');
+		socket.emit('submitResult','sucesso');
 	})
 	socket.on('stopNginxLbContainer',function(limit){
 		nginxlb_nodes.getOnlineNginxLbNodeContainers(function(onlinelcontainers){
 			if(limit <= onlinelcontainers.length)
 			{
 				for (let i = 0; i < limit; i++) {
-					nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
+					connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
+					nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(){
 		  				console.log("arrancou um node lb");
 		  			})
 				}
-				socket.emit('stopNginxLbContainer','sucesso');
+				socket.emit('submitResult','sucesso');
 			}
 			else
 			{
-				socket.emit('stopNginxLbContainer','montante de containers invalido');
+				socket.emit('submitResult','montante de containers invalido');
 			}
 		})
 	})
