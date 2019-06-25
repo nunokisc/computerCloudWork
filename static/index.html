@@ -26,8 +26,8 @@
     <div class="bg-light border-right" id="sidebar-wrapper">
       <div class="sidebar-heading">Menu</div>
       <div class="list-group list-group-flush">
-          <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
-          <a href="index1.html" class="list-group-item list-group-item-action bg-light">Gestão Containers</a>
+        <a href="#" class="list-group-item list-group-item-action bg-light">Dashboard</a>
+        <a href="index1.html" class="list-group-item list-group-item-action bg-light">Gestão Containers</a>
       </div>
     </div>
     <!-- /#sidebar-wrapper -->
@@ -64,237 +64,275 @@
           </ul>
         </div>
       </nav>
-    <div>
-      <div class="container-fluid">
-        <h1 class="display-2 text-center">Dashboard TNT</h1>
-        <div style="margin-top:20px;" class="row" id="row1">
-        </div>
-        <div style="margin-top:20px;" class="row" id="row2">
-        </div>
-        <div style="margin-top:20px;" class="row" id="row3">
-        </div>
+      <div>
+        <div class="container-fluid">
+          <h1 class="display-2 text-center">Dashboard TNT</h1>
+          <div style="margin-top:20px;" class="row" id="row1">
+          </div>
+          <div style="margin-top:20px;" class="row" id="row2">
+          </div>
+          <div style="margin-top:20px;" class="row" id="row3">
+          </div>
 
 
-        <div style="margin-top:20px;" class="row">
-          <div class="col-3">
-            <h2 class="mt-6">Nodes</h2>
-            <table class="table table-sm table-dark" id='thetable'>
-              <tr style="border:1px solid black">
-                <th style="border:1px solid black">Name</th>
-                <th>Ip</th>
-                <th>hostnames</th>
-              </tr>
-            </table> 
+          <div style="margin-top:20px;" class="row">
+            <div class="col-4">
+              <h4 class="sub-header">Nodes</h4>
+              <div class="table-responsive">
+                <table class="table table-dark" id='thetable'>
+                  <tr style="border:1px solid black">
+                    <th style="border:1px solid black">Name</th>
+                    <th>Ip</th>
+                    <th>hostnames</th>
+                  </tr>
+                </table> 
+              </div>
+            </div>
+            <div class="col-3">
+              <h4 class="sub-header">Online Nginx Node</h4>
+              <div class="table-responsive">
+                <table class="table table-dark" id='thetable3'>
+                  <tr style="border:1px solid black">
+                    <th style="border:1px solid black">Name</th>
+                    <th>Ip</th>
+                  </tr>
+                </table> 
+              </div>
+              <h4 class="sub-header">Online Nginx Lb Node</h4>
+              <div class="table-responsive">
+                <table class="table table-dark" id='thetable5'>
+                  <tr style="border:1px solid black">
+                    <th style="border:1px solid black">Name</th>
+                    <th>Ip</th>
+                  </tr>
+                </table> 
+              </div>
+            </div>
+            <div class="col-3">
+              <h4 class="sub-header">Online Root Containers</h4>
+              <div class="table-responsive">
+                <table class="table table-dark" id='thetable4'>
+                  <tr style="border:1px solid black">
+                    <th style="border:1px solid black">Name</th>
+                    <th>Ip</th>
+                  </tr>
+                </table> 
+              </div>
+            </div>
+            <div class="col-2">
+              <h4 class="sub-header">Ips</h4>
+              <div class="table-responsive">
+                <table class="table table-dark" id='thetable2'>
+                  <tr style="border:1px solid black">
+                    <th>Ip</th>
+                  </tr>
+                </table> 
+              </div>
+            </div>
           </div>
-          <div class="col-3">
-            <h2 class="mt-6">Online Nginx Node</h2>
-            <table class="table table-sm table-dark" id='thetable3'>
-              <tr style="border:1px solid black">
-                <th style="border:1px solid black">Name</th>
-                <th>Ip</th>
-              </tr>
-            </table> 
+          <div style="margin-top:20px;" class="row">
           </div>
-          <div class="col-3">
-            <h2 class="mt-6">Online Root Containers</h2>
-            <table class="table table-sm table-dark" id='thetable4'>
-              <tr style="border:1px solid black">
-                <th style="border:1px solid black">Name</th>
-                <th>Ip</th>
-              </tr>
-            </table> 
-          </div>
-          <div class="col-3">
-            <h2 class="mt-6">Ips</h2>
-            <table class="table table-sm table-dark" id='thetable2'>
-              <tr style="border:1px solid black">
-                <th>Ip</th>
-              </tr>
-            </table> 
-          </div>
-          <div class="col-3">
-          	<h2>Requests p/Second</h2>
-          	<p class="h3 text-white bg-dark text-center" id='req'></p><br>
-          </div>
-          <div class="col-3">
-            <h2>Active Connections</h2>
+          <div style="margin-top:20px;" class="row">
+            <div class="col-3">
+              <h4>Requests p/Second</h4>
+             <p class="h3 text-white bg-dark text-center" id='req'></p><br>
+           </div>
+           <div class="col-3">
+            <h4>Active Connections</h4>
             <p class="h3 text-white bg-dark text-center" id='actCon'></p><br>
           </div>
           <div class="col-3">
-          	<h2>Req. Limit to Spawn</h2>
+          	<h4>Req. Limit to Spawn</h4>
           	<p class="h3 text-white bg-dark text-center" id='reqSpawn'></p><br>
           </div>
           <div class="col-3">
-          	<h2>Req.Limit to Spawn Propagation</h2>
+          	<h4>Req.Limit to Spawn Propagation</h4>
           	<p class="h3 text-white bg-dark text-center" id='reqSpawnProp'></p><br>
           </div>
-          <div class="col-3">
-          	<h2>Connection Limit to Spawn</h2>
+        </div>
+        <div style="margin-top:20px;" class="row">
+          <div class="col-6">
+          	<h4>Connection Limit to Spawn</h4>
           	<p class="h3 text-white bg-dark text-center" id='conSpawn'></p><br>
           </div>
-          <div class="col-3">
-          	<h2>Con. Limit Spawn Propagation</h2>
+          <div class="col-6">
+          	<h4>Con. Limit Spawn Propagation</h4>
           	<p class="h3 text-white bg-dark text-center" id='conSpawnProp'></p><br>
-          </div>        
-        </div>
+          </div>   
+        </div>     
       </div>
 
 
+    </div>
+    <!-- /#page-content-wrapper -->
+
   </div>
-  <!-- /#page-content-wrapper -->
+  <!-- /#wrapper -->
 
-</div>
-<!-- /#wrapper -->
+  <!-- Bootstrap core JavaScript -->
+  <script src="vendor/jquery/jquery.min.js"></script>
+  <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-<!-- Bootstrap core JavaScript -->
-<script src="vendor/jquery/jquery.min.js"></script>
-<script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+  <!-- Menu Toggle Script -->
+  <script>
+    $("#menu-toggle").click(function(e) {
+      e.preventDefault();
+      $("#wrapper").toggleClass("toggled");
+    });
+  </script>
 
-<!-- Menu Toggle Script -->
-<script>
-  $("#menu-toggle").click(function(e) {
-    e.preventDefault();
-    $("#wrapper").toggleClass("toggled");
-  });
-</script>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+   var socket = io();
 
-<script src="/socket.io/socket.io.js"></script>
-<script>
- var socket = io();
+   socket.emit('getOnlineContainers','');
+   socket.emit('getRootContainers','');
+   socket.emit('getUsedIps','');
+   socket.emit('getRequestsPerSecond','');
+   socket.emit('getRequestsLimitToSpawn','');
+   socket.emit('getRequestsLimitToSpawnPropagation','');
+   socket.emit('getConnectionsLimitToSpawn','');
+   socket.emit('getConnectionsLimitToSpawnPropagation','');
+   socket.emit('getActiveConnections','');
 
- socket.emit('getOnlineContainers','');
- socket.emit('getOnlineNginxNodeContainers','');
- socket.emit('getRootContainers','');
- socket.emit('getUsedIps','');
- socket.emit('getRequestsPerSecond','');
- socket.emit('getRequestsLimitToSpawn','');
- socket.emit('getRequestsLimitToSpawnPropagation','');
- socket.emit('getConnectionsLimitToSpawn','');
- socket.emit('getConnectionsLimitToSpawnPropagation','');
- socket.emit('getActiveConnections','');
+   socket.on('getOnlineContainers', function(msg) {
+     console.log(msg);
 
- socket.on('getOnlineContainers', function(msg) {
-   console.log(msg);
+     $('#thetable tr').not(':first').not(':last').remove();
+     $('#thetable3 tr').not(':first').not(':last').remove();
+     $('#thetable5 tr').not(':first').not(':last').remove();
+     var html = '';
+     var html1 = '';
+     var html2 = '';
+     for(var i = 0; i < msg.length; i++){
 
-   $('#thetable tr').not(':first').not(':last').remove();
-   var html = '';
-   for(var i = 0; i < msg.length; i++){
-   	if(msg[i].name.substring(0,9)=='cwc-nginx'){
+
+
+       if(msg[i].name.substring(0,9)=='cwc-nginx' && msg[i].name!='cwc-nginx-master' && msg[i].name.substring(0,11)!='cwc-nginxlb' && msg[i].name!='cwc-nginxlb-master'){
+         html1 += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
+       }
+       if(msg[i].name.substring(0,9)=='cwc-nginx' && msg[i].name!='cwc-nginx-master' && msg[i].name.substring(0,11)=='cwc-nginxlb' && msg[i].name!='cwc-nginxlb-master'){
+         html2 += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
+       }
+
+
+       if(msg[i].name.substring(0,9)=='cwc-nginx'){
    		//if(msg[i].name=='cwc-nginxlb-master')
    			//showGrafanaIframe(msg[i].hostname);
-   		html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
-   		'</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> <a href="#" onclick="showGrafanaIframe(\''+msg[i].hostname+'\');" >' + msg[i].hostname + '</a></td></tr>';
-   	}
-   	else {
-   		html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> ' + msg[i].hostname + '</td></tr>';
+         html += '<tr style="border:1px solid black"><td>' + msg[i].name + 
+         '</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> <a href="#" onclick="showGrafanaIframe(\''+msg[i].hostname+'\');" >' + msg[i].hostname + '</a></td></tr>';
+       }
+       else {
+         html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td><td style="border:1px solid black"> ' + msg[i].hostname + '</td></tr>';
 
-   	}
-   	
-   }
-    
-  $('#thetable tr').first().after(html);
+       }
 
-})
+     }
 
- socket.on('getUsedIps',function(msg){
-  console.log(msg);
+     $('#thetable tr').first().after(html);
+     $('#thetable3 tr').first().after(html1);
+     $('#thetable5 tr').first().after(html2);
+   })
+
+   socket.on('getUsedIps',function(msg){
+    console.log(msg);
 
     $('#thetable2 tr').not(':first').not(':last').remove();
-   var html = '';
-   for(var i = 0; i < msg.length; i++)
-    html += '<tr style="border:1px solid black"><td>' + msg[i] + '</td></tr>';
-  $('#thetable2 tr').first().after(html);
-})
+    var html = '';
+    for(var i = 0; i < msg.length; i++)
+      html += '<tr style="border:1px solid black"><td>' + msg[i] + '</td></tr>';
+    $('#thetable2 tr').first().after(html);
+  })
 
-socket.on('getOnlineNginxNodeContainers',function(msg){
-  console.log(msg);
+   socket.on('getOnlineNginxNodeContainers',function(msg){
+    console.log(msg);
 
     $('#thetable3 tr').not(':first').not(':last').remove();
-   var html = '';
-   for(var i = 0; i < msg.length; i++)
+    var html = '';
+    for(var i = 0; i < msg.length; i++)
      html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
-  $('#thetable3 tr').first().after(html);
-})
+   $('#thetable3 tr').first().after(html);
+ })
 
-socket.on('getRootContainers',function(msg){
-  console.log(msg);
+   socket.on('getRootContainers',function(msg){
+    console.log(msg);
 
     $('#thetable4 tr').not(':first').not(':last').remove();
-   var html = '';
-   for(var i in msg)
+    var html = '';
+    for(var i in msg)
      html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
-  $('#thetable4 tr').first().after(html);
-})
+   $('#thetable4 tr').first().after(html);
+ })
 
 
-socket.on('getRequestsPerSecond',function(msg){
-  console.log(msg);
+   socket.on('getRequestsPerSecond',function(msg){
+    console.log(msg);
 
     $('#req').html(msg);
-})
+  })
 
-socket.on('getRequestsLimitToSpawn',function(msg){
-  console.log(msg);
+   socket.on('getRequestsLimitToSpawn',function(msg){
+    console.log(msg);
 
     $('#reqSpawn').html(msg);
-})
+  })
 
-socket.on('getRequestsLimitToSpawnPropagation',function(msg){
-  console.log(msg);
+   socket.on('getRequestsLimitToSpawnPropagation',function(msg){
+    console.log(msg);
 
     $('#reqSpawnProp').html(msg);
-})
+  })
 
-socket.on('getConnectionsLimitToSpawn',function(msg){
-  console.log(msg);
+   socket.on('getConnectionsLimitToSpawn',function(msg){
+    console.log(msg);
 
     $('#conSpawn').html(msg);
-})
+  })
 
-socket.on('getConnectionsLimitToSpawnPropagation',function(msg){
-  console.log(msg);
+   socket.on('getConnectionsLimitToSpawnPropagation',function(msg){
+    console.log(msg);
 
     $('#conSpawnProp').html(msg);
-})
+  })
 
-socket.on('getActiveConnections',function(msg){
-  console.log(msg);
+   socket.on('getActiveConnections',function(msg){
+    console.log(msg);
 
     $('#actCon').html(msg);
-})
+  })
 
 
 
- function createIframe(host,hostname,panelId,col){
-  return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
- }
+   function createIframe(host,hostname,panelId,col){
+    return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
+  }
 
   function createIframe2(host,hostname,panelId,col){
-  return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
- }
+    return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
+  }
 
   function createIframe3(host,hostname,panelId,col){
-  return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
- }
+    return ' <iframe class="col-'+col+'" src="http://'+host+':3001/d-solo/GqFjuAgmk/nginx?orgId=1&refresh=5s&var-datasource=InfluxDB&panelId='+panelId+'&from=now-1h&to=now&var-host='+hostname+'"  frameborder="0"></iframe>';
+  }
 
- function showGrafanaIframe(hostname){
-  console.log(hostname)
-  let host = $(location).attr('hostname');
-  let panelId = 1;
-  let col = 3;
-  $("#row1").html("");
-  $("#row2").html("");
-  $("#row3").html("");
-  for (let i = 1; i <= 4; i++) {
+  function showGrafanaIframe(hostname){
+    console.log(hostname)
+    let host = $(location).attr('hostname');
+    let panelId = 1;
+    let col = 3;
+    $("#row1").html("");
+    $("#row2").html("");
+    $("#row3").html("");
+    for (let i = 1; i <= 4; i++) {
       $("#row1").append(createIframe(host,hostname,i,3));
-  }
-  for (let i = 5; i <= 7; i=i+2) {
+    }
+    for (let i = 5; i <= 7; i=i+2) {
       $("#row2").append(createIframe2(host,hostname,i,6));
+    }
+    $("#row3").append(createIframe3(host,hostname,8,12));
+    $("#row3").append(createIframe3(host,hostname,31,12));
+    $("#row3").append(createIframe3(host,hostname,32,12));
   }
-  $("#row3").append(createIframe3(host,hostname,8,12));
-  $("#row3").append(createIframe3(host,hostname,31,12));
-  $("#row3").append(createIframe3(host,hostname,32,12));
- }
 </script>
 
 

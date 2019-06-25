@@ -53,11 +53,13 @@ containers.docker.listContainers(function (err, dockerContainers)
 				{
 					nginx_nodes.setOnlineNginxNodeContainers({name:containerName});
 					requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
+					io.emit('getRequestsLimitToSpawn',requestsLimitToSpawn);
 				}
 				else if(containerName.includes('cwc-nginxlb-') && !containerName.includes(rootContainers.nginxlb.name))
 				{
 					nginxlb_nodes.setOnlineNginxLbNodeContainers({name:containerName});
 					connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
+					io.emit('getConnectionsLimitToSpawn',connectionsLimitToSpawn);
 				}
 			}
 
@@ -102,6 +104,7 @@ function getRequestsPerSecond()
 		// query para receber os valores de rps
 		influx.query('SELECT derivative(max(requests)) as requestsPerSecond FROM nginx where time > now() - 2s GROUP BY time(1s)').then(results => {
 			requestsPerSecond = results[0].requestsPerSecond;
+			io.emit('getRequestsPerSecond',requestsPerSecond);
 		  	console.log("rps: "+results[0].requestsPerSecond);
 		  	if(requestsPerSecond > 0)
 		  	{
@@ -109,6 +112,7 @@ function getRequestsPerSecond()
 			  	if(requestsPerSecond > requestsLimitToSpawn)
 			  	{
 			  		requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
+			  		io.emit('getRequestsLimitToSpawn',requestsLimitToSpawn);
 			  		nginx_nodes.getTimeOutDel(function(timeOutDel)
 			  		{
 			  			if(timeOutDel.length > 0)
@@ -134,6 +138,7 @@ function getRequestsPerSecond()
 			  			console.log("adicionou node a timeout");
 			  			// diminuir os limite para o level abaixo
 			  			requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
+			  			io.emit('getRequestsLimitToSpawn',requestsLimitToSpawn);
 			  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
 			  				console.log(msg);
 			  			})
@@ -150,10 +155,12 @@ function getActiveConnections()
 	{
 		influx.query('SELECT LAST(active) as activeConnections FROM nginx').then(results => {
 			activeConnections = results[0].activeConnections;
+			io.emit('getActiveConnections',activeConnections);
 		  	console.log("conn "+results[0].activeConnections);
 		  	if(activeConnections > connectionsLimitToSpawn)
 		  	{
 		  		connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
+		  		io.emit('getConnectionsLimitToSpawn',connectionsLimitToSpawn);
 		  		nginxlb_nodes.getTimeOutDel(function(timeOutDel)
 		  		{
 		  			if(timeOutDel.length > 0)
@@ -176,6 +183,7 @@ function getActiveConnections()
 		  		{
 		  			console.log("eliminar coiso");
 		  			connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
+		  			io.emit('getConnectionsLimitToSpawn',connectionsLimitToSpawn);
 		  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
 		  				console.log(msg);
 		  			})
