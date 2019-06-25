@@ -307,6 +307,7 @@ io.on('connection', function(socket){
 	})
 	socket.on('setMode',function(e){
 		autoMode = e;
+		console.log('Autoscalling: '+autoMode);
 	})
 	socket.on('disconnect', function(){
 		console.log('user disconnected');
