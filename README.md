@@ -1,6 +1,7 @@
-# computerCloudWork
+# computerCloudWork (UBUNTU)
 
 Este projecto consistem em escalar automaticamente em Docker um site em Wordpress dependendo dos pedidos e conexões por segundo recebidos. Desenvolvido em node.JS com o dockerode.
+(Apenas testado em UBUNTU)
 
 # Run
 
