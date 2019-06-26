@@ -198,9 +198,9 @@
    socket.on('getOnlineContainers', function(msg) {
      console.log(msg);
 
-     $('#thetable tr').not(':first').not(':last').remove();
-     $('#thetable3 tr').not(':first').not(':last').remove();
-     $('#thetable5 tr').not(':first').not(':last').remove();
+     $('#thetable tr').not(':first').remove();
+     $('#thetable3 tr').not(':first').remove();
+     $('#thetable5 tr').not(':first').remove();
      var html = '';
      var html1 = '';
      var html2 = '';
@@ -237,22 +237,12 @@
    socket.on('getUsedIps',function(msg){
     console.log(msg);
 
-    $('#thetable2 tr').not(':first').not(':last').remove();
+    $('#thetable2 tr').not(':first').remove();
     var html = '';
     for(var i = 0; i < msg.length; i++)
       html += '<tr style="border:1px solid black"><td>' + msg[i] + '</td></tr>';
     $('#thetable2 tr').first().after(html);
   })
-
-   socket.on('getOnlineNginxNodeContainers',function(msg){
-    console.log(msg);
-
-    $('#thetable3 tr').not(':first').not(':last').remove();
-    var html = '';
-    for(var i = 0; i < msg.length; i++)
-     html += '<tr style="border:1px solid black"><td>' + msg[i].name + '</td><td style="border:1px solid black">' + msg[i].ip + '</td></tr>';
-   $('#thetable3 tr').first().after(html);
- })
 
    socket.on('getRootContainers',function(msg){
     console.log(msg);

@@ -94,6 +94,8 @@ containers.docker.listContainers(function (err, dockerContainers)
 		containers.startContainer('grafana', rootContainers.grafana.name, [],rootContainers.grafana.ip, function (data, initialStart){
 			containers.getContainerDataRunning(data.Config.Hostname,initialStart);
 		});
+		setInterval(getActiveConnections,10000);
+		setInterval(getRequestsPerSecond,10100);
 	}
 });
 
@@ -124,7 +126,14 @@ function getRequestsPerSecond()
 			  			{
 			  				nginx_nodes.createNewNginxNode(absolutePath,function(){
 					  			console.log("arrancou um node");
-					  		})
+					  			containers.getUsedIps(function(usedIps){
+									io.emit('getUsedIps',usedIps);
+								})
+				  				containers.getOnlineContainers(function(onlineContainers){
+									io.emit('getOnlineContainers',onlineContainers);
+								})
+				  				io.emit('getRootContainers',rootContainers);
+							  })
 			  			}
 			  		})
 			  		console.log("req: limit "+requestsLimitToSpawn);
@@ -141,7 +150,14 @@ function getRequestsPerSecond()
 			  			io.emit('getRequestsLimitToSpawn',requestsLimitToSpawn);
 			  			nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
 			  				console.log(msg);
-			  			})
+			  				containers.getUsedIps(function(usedIps){
+								io.emit('getUsedIps',usedIps);
+							})
+			  				containers.getOnlineContainers(function(onlineContainers){
+								io.emit('getOnlineContainers',onlineContainers);
+							})
+			  				io.emit('getRootContainers',rootContainers);
+				  		})
 			  		}	
 			  	}
 		  	}
@@ -172,7 +188,14 @@ function getActiveConnections()
 		  			{
 		  				nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
 			  				console.log("arrancou um node lb");
-			  			})
+			  				containers.getUsedIps(function(usedIps){
+								io.emit('getUsedIps',usedIps);
+							})
+			  				containers.getOnlineContainers(function(onlineContainers){
+								io.emit('getOnlineContainers',onlineContainers);
+							})
+			  				io.emit('getRootContainers',rootContainers);
+				  		})
 		  			}
 		  		})
 		  		console.log("conn: limit "+connectionsLimitToSpawn);
@@ -186,6 +209,13 @@ function getActiveConnections()
 		  			io.emit('getConnectionsLimitToSpawn',connectionsLimitToSpawn);
 		  			nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(msg){
 		  				console.log(msg);
+		  				containers.getUsedIps(function(usedIps){
+							io.emit('getUsedIps',usedIps);
+						})
+		  				containers.getOnlineContainers(function(onlineContainers){
+							io.emit('getOnlineContainers',onlineContainers);
+						})
+		  				io.emit('getRootContainers',rootContainers);
 		  			})
 		  		}	
 		  	}
@@ -265,6 +295,13 @@ io.on('connection', function(socket){
 			requestsLimitToSpawn = requestsLimitToSpawn + requestsLimitToSpawnPropagation;
 			nginx_nodes.createNewNginxNode(absolutePath,function(){
 	  			console.log("arrancou um node");
+	  			containers.getUsedIps(function(usedIps){
+					io.emit('getUsedIps',usedIps);
+				})
+  				containers.getOnlineContainers(function(onlineContainers){
+					io.emit('getOnlineContainers',onlineContainers);
+				})
+  				io.emit('getRootContainers',rootContainers);
 	  		})
 		}
 		socket.emit('submitResult','sucesso');
@@ -277,7 +314,14 @@ io.on('connection', function(socket){
 					requestsLimitToSpawn = requestsLimitToSpawn - requestsLimitToSpawnPropagation;
 					nginx_nodes.deleteNewNginxNodeWithTimeout(absolutePath,function(msg){
 		  				console.log("arrancou um node lb");
-		  			})
+		  				containers.getUsedIps(function(usedIps){
+							io.emit('getUsedIps',usedIps);
+						})
+		  				containers.getOnlineContainers(function(onlineContainers){
+							io.emit('getOnlineContainers',onlineContainers);
+						})
+		  				io.emit('getRootContainers',rootContainers);
+			  		})
 				}
 				socket.emit('submitResult','sucesso');
 			}
@@ -293,6 +337,13 @@ io.on('connection', function(socket){
 			connectionsLimitToSpawn = connectionsLimitToSpawn + connectionsLimitToSpawnPropagation;
 			nginxlb_nodes.createNewNginxLbNode(absolutePath,function(){
   				console.log("arrancou um node lb");
+  				containers.getUsedIps(function(usedIps){
+					io.emit('getUsedIps',usedIps);
+				})
+  				containers.getOnlineContainers(function(onlineContainers){
+					io.emit('getOnlineContainers',onlineContainers);
+				})
+  				io.emit('getRootContainers',rootContainers);
   			})
 		}
 		socket.emit('submitResult','sucesso');
@@ -305,6 +356,13 @@ io.on('connection', function(socket){
 					connectionsLimitToSpawn = connectionsLimitToSpawn - connectionsLimitToSpawnPropagation;
 					nginxlb_nodes.deleteNewNginxLbNodeWithTimeout(absolutePath,function(){
 		  				console.log("arrancou um node lb");
+		  				containers.getUsedIps(function(usedIps){
+							io.emit('getUsedIps',usedIps);
+						})
+		  				containers.getOnlineContainers(function(onlineContainers){
+							io.emit('getOnlineContainers',onlineContainers);
+						})
+		  				io.emit('getRootContainers',rootContainers);
 		  			})
 				}
 				socket.emit('submitResult','sucesso');
